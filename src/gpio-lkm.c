@@ -218,7 +218,7 @@ static long getPerfCounter(void) {
 
 static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
     getnstimeofday(&toc);
-    timediff = timespec_sub(toc - tic); 
+    timediff = timespec_sub(toc,tic); 
     custom_set_gpio_direction(GPIO0_20, 0);  // set GPIO to output
     custom_set_gpio_dataout_reg(GPIO0_20, 1); // set GPIO to high
     printk(KERN_INFO "GPIO_TEST: Interrupt!");
