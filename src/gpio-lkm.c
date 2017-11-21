@@ -30,6 +30,7 @@ static unsigned int ccrInit = 1;            // used as a flag for the performanc
 // The prototype functions for the character driver -- must come before the struct definition
 static int     dev_open(struct inode *, struct file *);
 static int     dev_release(struct inode *, struct file *);
+static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 static long    getPerfCounter(void);
 static void custom_set_gpio_direction(int gpio, int is_input);
 static void custom_set_gpio_dataout_reg(unsigned offset, int enable);
