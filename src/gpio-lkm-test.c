@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h> 
+#include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #include "beaglebone-gpio.h"
@@ -18,7 +19,7 @@ int main(int argc, char *argv[]) {
     ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
     printf("done.\n");
     capValue = ioctl(fd, IOCTL_GET_VALUE, &capValue);
-    printf("Value from capacitance measure is %d \n", capValue);
+    printf("Value from capacitance measure is %ld \n", capValue);
     close(fd);
     return 0;
 }
