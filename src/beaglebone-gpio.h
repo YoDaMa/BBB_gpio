@@ -11,8 +11,10 @@
 #define GPIO_FALLINGDETECT 0x14C 	// for enabling falling edge detection for IRQ
 #define GPIO_CLEARDATAOUT 0x190     // for clearing the registers
 #define GPIO_SETDATAOUT   0x194     // for settings the DATOUT register
-#define GPIO1_17 0x00020000 // hard-coded GPIO1_17
-#define GPIO0_20 0x00100000 // hard coded GPIO0_20
+#define PIN_17 0x00020000 // hard-coded GPIO1_17
+#define PIN_18 0x00040000 // hard-coded GPIO1_17
+#define PIN_19 0x00080000 // hard-coded pin 19
+#define PIN_20 0x00100000 // hard coded GPIO0_20
 #define CLOCK_SPEED 1000000000      // 1 GHZ
 #define MYMEM_IOCTL_MAGIC 		245
 #define IOCTL_GET_VALUE _IOWR(MYMEM_IOCTL_MAGIC, 0, char *)

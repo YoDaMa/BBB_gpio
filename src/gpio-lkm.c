@@ -120,7 +120,7 @@ static int __init gpio_init(void){
 
     printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
 
-    gpio_map = ioremap(GPIO0, 0x1FFF);
+    gpio_map = ioremap(GPIO3, 0x1000);
 
 
     return result;
@@ -186,15 +186,15 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case IOCTL_MEASURE_CAPACITANCE:
         {
             printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_MEASURE_CAPACITANCE\n");
-            custom_set_gpio_direction(GPIO0_20, 0); // set pin to output
-            custom_set_gpio_dataout_reg(GPIO0_20, 1); // set pin to high
+            custom_set_gpio_direction(PIN_19, 0); // set pin to output
+            custom_set_gpio_dataout_reg(PIN_19, 1); // set pin to high
             // THIS IS WHERE THE ERROR IS HAPPENING
-            if (!custom_get_gpio_dataout(GPIO0_20)) {   // gpio is not set to high
+            if (!custom_get_gpio_dataout(PIN_19)) {   // gpio is not set to high
                 printk(KERN_INFO "GPIOTEST: Dataout register not set to high...\n");
                 return -EFAULT;
             }
             getnstimeofday(&tic);
-            custom_set_gpio_direction(GPIO0_20, 1); // set pin to input
+            custom_set_gpio_direction(PIN_19, 1); // set pin to input
         }
         break;
     }
@@ -220,8 +220,8 @@ static long getPerfCounter(void) {
 static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
     getnstimeofday(&toc);
     timediff = timespec_sub(toc,tic); 
-    custom_set_gpio_direction(GPIO0_20, 0);  // set GPIO to output
-    custom_set_gpio_dataout_reg(GPIO0_20, 1); // set GPIO to high
+    custom_set_gpio_direction(PIN_19, 0);  // set GPIO to output
+    custom_set_gpio_dataout_reg(PIN_19, 1); // set GPIO to high
     printk(KERN_INFO "GPIO_TEST: Interrupt!");
     return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
 }
