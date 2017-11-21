@@ -44,7 +44,7 @@ static int custom_get_gpio_dataout(int offset);
 
 
 static long      capacitance; // calculated capacitance
-static long     tic, toc; // used for timer measurements
+static struct timespec tic, toc, timediff; // used for timer measurements
 
 
 /** @brief Devices are represented as file structure in the kernel. The file_operations structure from
@@ -173,11 +173,12 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         {
             printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_GETVALUE\n");
             
+            capacitance = timediff.tv_nsec;
             if (copy_to_user((long *) arg, &capacitance, sizeof(long))) {
                 printk(KERN_ALERT "GPIOTEST: copy_to_user failed\n");
 		        return -EFAULT; 
             }
-
+            printk(KERN_INFO "GPIOTEST: copy_to_user succeeded.\n");
             return capacitance;
         }
         break;
@@ -191,7 +192,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                 printk(KERN_INFO "GPIOTEST: Dataout register not set to high...\n");
                 return -EFAULT;
             }
-            tic = getnstimeofday();
+            getnstimeofday(&tic);
             custom_set_gpio_direction(GPIO0_20, 1); // set pin to input
         }
         break;
@@ -216,8 +217,8 @@ static long getPerfCounter(void) {
 }
 
 static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
-    toc = getnstimeofday();
-    capacitance = toc - tic; 
+    getnstimeofday(&toc);
+    timediff = timespec_sub(toc - tic); 
     custom_set_gpio_direction(GPIO0_20, 0);  // set GPIO to output
     custom_set_gpio_dataout_reg(GPIO0_20, 1); // set GPIO to high
     printk(KERN_INFO "GPIO_TEST: Interrupt!");
