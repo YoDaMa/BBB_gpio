@@ -100,10 +100,6 @@ static int __init gpio_init(void){
         return -ENODEV;
     }
     // Going to set up the LED. It is a GPIO in output mode and will be on by default
-    ledOn = true;
-    gpio_request(gpioLED, "sysfs");          // gpioLED is hardcoded to 49, request it
-    gpio_direction_output(gpioLED, ledOn);   // Set the gpio to be in output mode and on
-    // gpio_set_value(gpioLED, ledOn);          // Not required as set by line above (here for reference)
     gpio_export(gpioLED, false);             // Causes gpio49 to appear in /sys/class/gpio
                                 // the bool argument prevents the direction from being changed
                                 // the bool argument prevents the direction from being changed
@@ -171,8 +167,8 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         {
             printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_GETVALUE\n");
             
-            if (copy_to_user(arg, &capacitance, sizeof(long))) {
-                printk(KERN_ERROR "GPIOTEST: copy_to_user failed\n");
+            if (copy_to_user((long *) arg, &capacitance, sizeof(long))) {
+                printk(KERN_ALERT "GPIOTEST: copy_to_user failed\n");
 		        return -EFAULT; 
             }
         }
@@ -181,7 +177,6 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case IOCTL_MEASURE_CAPACITANCE:
         {
             printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_MEASURE_CAPACITANCE\n");
-            timer = getPerfCounter();
             custom_set_gpio_direction(GPIO0_20, 0); // set pin to output
             custom_set_gpio_dataout_reg(GPIO0_20, 1); // set pin to high
             if (!custom_get_gpio_dataout(GPIO0_20)) {   // gpio is not set to high
