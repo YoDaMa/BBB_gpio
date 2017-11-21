@@ -250,8 +250,6 @@ static void custom_set_gpio_dataout_reg(unsigned offset, int enable)
 	u32 l;
 
 	l = readl_relaxed(reg);
-    // printk(KERN_INFO "CUSTOM_DATAOUT_REG: Readl_relaxed is %lu", l);
-
 	if (enable)
 		l |= gpio_bit;
 	else
@@ -268,7 +266,7 @@ static int custom_get_gpio_datain(int offset)
 static int custom_get_gpio_dataout(int offset)
 {
 	void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAOUT;
-    printk(KERN_INFO "CUSTOM_DATAOUT: The register is ");
+    // printk(KERN_INFO "CUSTOM_DATAOUT: The register is ");
 	return (readl_relaxed(reg) & (BIT(offset))) != 0;
 }
 
