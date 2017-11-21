@@ -1,0 +1,1 @@
+cmd_/home/yoseph/BBB_gpio/src/gpio-lkm.ko := arm-linux-gnueabihf-ld -EL -r  -T ./scripts/module-common.lds --build-id  -T ./arch/arm/kernel/module.lds -o /home/yoseph/BBB_gpio/src/gpio-lkm.ko /home/yoseph/BBB_gpio/src/gpio-lkm.o /home/yoseph/BBB_gpio/src/gpio-lkm.mod.o
