@@ -170,7 +170,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         {
             printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_GETVALUE\n");
             
-            if (copy_to_user((query_arg_t *) arg, &capacitance, sizeof(long))) {
+            if (copy_to_user(arg, &capacitance, sizeof(long))) {
                 printk(KERN_ERROR "GPIOTEST: copy_to_user failed\n");
 		        return -EFAULT; 
             }
