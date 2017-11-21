@@ -22,6 +22,7 @@ static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct 
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static unsigned int irqNumber;
 static int gpioLED = 20;
+void __iomem *gpio_map;
 
 static irq_handler_t gpio424_irq_handler(unsigned int irt, void *dev_id, struct pt_regs *regs);
 
@@ -117,6 +118,11 @@ static int __init gpio_init(void){
                         NULL);                 // The *dev_id for shared interrupt lines, NULL is okay
 
     printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
+
+    ioremap();
+    gpio_map = ioremap(GPIO0, 1024);
+
+
     return result;
 }
 
@@ -223,7 +229,7 @@ static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct 
 static void custom_set_gpio_direction(int gpio, int is_input)
 {
 	// hard code the base value...
-	void __iomem *reg = (void *) (long) GPIO0 + GPIO_OE; // this is correct base 
+	void __iomem *reg = (void *) (long) gpio_map + GPIO_OE; // this is correct base 
 	u32 l;
     l = readl_relaxed(reg);
 	if (is_input)
@@ -235,7 +241,7 @@ static void custom_set_gpio_direction(int gpio, int is_input)
 
 static void custom_set_gpio_dataout_reg(unsigned offset, int enable)
 {
-    void __iomem *reg = (void *) (long) GPIO0 + GPIO_DATAOUT;
+    void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAOUT;
 	u32 gpio_bit = BIT(offset);
 	u32 l;
 
@@ -249,13 +255,13 @@ static void custom_set_gpio_dataout_reg(unsigned offset, int enable)
 
 static int custom_get_gpio_datain(int offset)
 {
-	void __iomem *reg = (void *) (long) GPIO1 + GPIO_DATAIN;
+	void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAIN;
 	return (readl_relaxed(reg) & (BIT(offset))) != 0;
 }
 
 static int custom_get_gpio_dataout(int offset)
 {
-	void __iomem *reg = (void *) (long) GPIO1 + GPIO_DATAOUT;
+	void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAOUT;
 	return (readl_relaxed(reg) & (BIT(offset))) != 0;
 }
 
