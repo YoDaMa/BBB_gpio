@@ -21,6 +21,7 @@ static int    majorNumber;                  ///< Stores the device number -- det
 static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static unsigned int irqNumber;
+static int gpioLED = 20;
 
 static irq_handler_t gpio424_irq_handler(unsigned int irt, void *dev_id, struct pt_regs *regs);
 
