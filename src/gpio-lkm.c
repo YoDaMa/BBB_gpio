@@ -6,6 +6,7 @@
 #include <asm/uaccess.h>          // Required for the copy to user function
 #include <linux/gpio.h>
 #include <linux/interrupt.h>
+#include <linux/time.h>
 #include "beaglebone-gpio.h"
 
 #define  DEVICE_NAME "gpio424"    ///< The device will appear at /dev/gpio424 using this value
@@ -119,8 +120,7 @@ static int __init gpio_init(void){
 
     printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
 
-    ioremap();
-    gpio_map = ioremap(GPIO0, 1024);
+    gpio_map = ioremap(GPIO0, 0x1FFF);
 
 
     return result;
@@ -177,6 +177,8 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                 printk(KERN_ALERT "GPIOTEST: copy_to_user failed\n");
 		        return -EFAULT; 
             }
+
+            return capacitance;
         }
         break;
 
@@ -189,7 +191,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                 printk(KERN_INFO "GPIOTEST: Dataout register not set to high...\n");
                 return -EFAULT;
             }
-            tic = getPerfCounter(); 
+            tic = getnstimeofday();
             custom_set_gpio_direction(GPIO0_20, 1); // set pin to input
         }
         break;
@@ -214,7 +216,7 @@ static long getPerfCounter(void) {
 }
 
 static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
-    toc = getPerfCounter();
+    toc = getnstimeofday();
     capacitance = toc - tic; 
     custom_set_gpio_direction(GPIO0_20, 0);  // set GPIO to output
     custom_set_gpio_dataout_reg(GPIO0_20, 1); // set GPIO to high

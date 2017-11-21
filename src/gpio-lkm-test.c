@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
     printf("Measuring capacitance...\n");
     ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
     printf("done.\n");
-    ioctl(fd, IOCTL_GET_VALUE, &capValue);
-    printf("Value from capacitance measure is; %d \n", capValue);
+    capValue = ioctl(fd, IOCTL_GET_VALUE, &capValue);
+    printf("Value from capacitance measure is %d \n", capValue);
     close(fd);
     return 0;
 }
