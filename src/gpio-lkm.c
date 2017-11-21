@@ -114,7 +114,7 @@ static int __init gpio_init(void){
     // This next call requests an interrupt line
     result = request_irq(irqNumber,             // The interrupt number requested
                         (irq_handler_t) gpio424_irq_handler, // The pointer to the handler function below
-                        IRQF_TRIGGER_FALLING,   // Interrupt on rising edge (button press, not release)
+                        IRQF_TRIGGER_LOW,   // Interrupt on rising edge (button press, not release)
                         "ebb_gpio_handler",    // Used in /proc/interrupts to identify the owner
                         NULL);                 // The *dev_id for shared interrupt lines, NULL is okay
 
@@ -188,6 +188,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_MEASURE_CAPACITANCE\n");
             custom_set_gpio_direction(GPIO0_20, 0); // set pin to output
             custom_set_gpio_dataout_reg(GPIO0_20, 1); // set pin to high
+            // THIS IS WHERE THE ERROR IS HAPPENING
             if (!custom_get_gpio_dataout(GPIO0_20)) {   // gpio is not set to high
                 printk(KERN_INFO "GPIOTEST: Dataout register not set to high...\n");
                 return -EFAULT;
@@ -249,6 +250,8 @@ static void custom_set_gpio_dataout_reg(unsigned offset, int enable)
 	u32 l;
 
 	l = readl_relaxed(reg);
+    printk(KERN_INFO "CUSTOM_DATAOUT_REG: Readl_relaxed is %lu", l);
+
 	if (enable)
 		l |= gpio_bit;
 	else
@@ -265,6 +268,7 @@ static int custom_get_gpio_datain(int offset)
 static int custom_get_gpio_dataout(int offset)
 {
 	void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAOUT;
+    printk(KERN_INFO "CUSTOM_DATAOUT: The register is %p", reg);
 	return (readl_relaxed(reg) & (BIT(offset))) != 0;
 }
 
