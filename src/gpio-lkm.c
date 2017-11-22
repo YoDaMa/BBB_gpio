@@ -22,8 +22,9 @@ static int    majorNumber;                  ///< Stores the device number -- det
 static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static unsigned int irqNumber;
-static int gpioLED = 20;
-void __iomem *gpio_map;
+static int gpioPIN = 115;                   // P9_27 | GPIO3_19
+static void __iomem *gpio_map;
+static void *mmio;
 
 static irq_handler_t gpio424_irq_handler(unsigned int irt, void *dev_id, struct pt_regs *regs);
 
@@ -97,30 +98,27 @@ static int __init gpio_init(void){
 
     printk(KERN_INFO "GPIO_TEST: Initializing the GPIO_TEST LKM\n");
     // Is the GPIO a valid GPIO number (e.g., the BBB has 4x32 but not all available)
-    if (!gpio_is_valid(gpioLED)){
+    if (!gpio_is_valid(gpioPIN)){
         printk(KERN_INFO "GPIO_TEST: invalid LED GPIO\n");
         return -ENODEV;
     }
-    // Going to set up the LED. It is a GPIO in output mode and will be on by default
-    gpio_export(gpioLED, false);             // Causes gpio49 to appear in /sys/class/gpio
-                                // the bool argument prevents the direction from being changed
-                                // the bool argument prevents the direction from being changed
-    // Perform a quick test to see that the button is working as expected on LKM 
 
     // GPIO numbers and IRQ numbers are not the same! This function performs the mapping for us
-    irqNumber = gpio_to_irq(gpioLED);
+    irqNumber = gpio_to_irq(gpioPIN);
     printk(KERN_INFO "GPIO_TEST: The wire is mapped to IRQ: %d\n", irqNumber);
 
     // This next call requests an interrupt line
     result = request_irq(irqNumber,             // The interrupt number requested
                         (irq_handler_t) gpio424_irq_handler, // The pointer to the handler function below
-                        IRQF_TRIGGER_LOW,   // Interrupt on rising edge (button press, not release)
-                        "ebb_gpio_handler",    // Used in /proc/interrupts to identify the owner
+                        IRQF_TRIGGER_FALLING,   // Interrupt on rising edge (button press, not release)
+                        "elec424_gpio_handler",    // Used in /proc/interrupts to identify the owner
                         NULL);                 // The *dev_id for shared interrupt lines, NULL is okay
 
     printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
 
     gpio_map = ioremap(GPIO3, 0x1000);
+    mmio = ioremap(GPIO3, 0x1000);
+    printk(KERN_INFO "GPIO_TEST: IOREMAP Maps GPIO3 to: %p", mmio);
 
 
     return result;
@@ -136,9 +134,6 @@ static void __exit gpio_exit(void){
     class_destroy(ebbcharClass);                             // remove the device class
     unregister_chrdev(majorNumber, DEVICE_NAME);             // unregister the major number
     printk(KERN_INFO "EBBChar: Goodbye from the LKM!\n");
-
-    gpio_set_value(gpioLED, 0);              // Turn the LED off, makes it clear the device was unloaded
-    gpio_unexport(gpioLED);                  // Unexport the LED GPIO
     free_irq(irqNumber, NULL);               // Free the IRQ number, no *dev_id required in this case
     printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
 }
