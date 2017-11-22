@@ -25,6 +25,7 @@ static unsigned int irqNumber;
 static int gpioPIN = 115;                   // P9_27 | GPIO3_19
 static void __iomem *gpio_map;
 static void *mmio;
+static int dataoutValue;
 
 static irq_handler_t gpio424_irq_handler(unsigned int irt, void *dev_id, struct pt_regs *regs);
 
@@ -67,15 +68,15 @@ static struct file_operations fops =
  */
 static int __init gpio_init(void){
     int result = 0;
-    printk(KERN_INFO "EBBChar: Initializing the EBBChar LKM\n");
+    printk(KERN_INFO "GPIO_LKM: Initializing the gpio LKM\n");
 
     // Try to dynamically allocate a major number for the device -- more difficult but worth it
     majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
     if (majorNumber<0){
-        printk(KERN_ALERT "EBBChar failed to register a major number\n");
+        printk(KERN_ALERT "GPIO_LKM: failed to register a major number\n");
         return majorNumber;
     }
-    printk(KERN_INFO "EBBChar: registered correctly with major number %d\n", majorNumber);
+    printk(KERN_INFO "GPIO_LKM: registered correctly with major number %d\n", majorNumber);
 
     // Register the device class
     ebbcharClass = class_create(THIS_MODULE, CLASS_NAME);
@@ -84,7 +85,7 @@ static int __init gpio_init(void){
         printk(KERN_ALERT "Failed to register device class\n");
         return PTR_ERR(ebbcharClass);          // Correct way to return an error on a pointer
     }
-    printk(KERN_INFO "EBBChar: device class registered correctly\n");
+    printk(KERN_INFO "GPIO_LKM: device class registered correctly\n");
 
     // Register the device driver
     ebbcharDevice = device_create(ebbcharClass, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
@@ -94,18 +95,18 @@ static int __init gpio_init(void){
         printk(KERN_ALERT "Failed to create the device\n");
         return PTR_ERR(ebbcharDevice);
     }
-    printk(KERN_INFO "EBBChar: device class created correctly\n"); // Made it! device was initialized
+    printk(KERN_INFO "GPIO_LKM: device class created correctly\n"); // Made it! device was initialized
 
-    printk(KERN_INFO "GPIO_TEST: Initializing the GPIO_TEST LKM\n");
+    printk(KERN_INFO "GPIO_LKM: Initializing the GPIO_LKM LKM\n");
     // Is the GPIO a valid GPIO number (e.g., the BBB has 4x32 but not all available)
     if (!gpio_is_valid(gpioPIN)){
-        printk(KERN_INFO "GPIO_TEST: invalid LED GPIO\n");
+        printk(KERN_INFO "GPIO_LKM: invalid LED GPIO\n");
         return -ENODEV;
     }
 
     // GPIO numbers and IRQ numbers are not the same! This function performs the mapping for us
     irqNumber = gpio_to_irq(gpioPIN);
-    printk(KERN_INFO "GPIO_TEST: The wire is mapped to IRQ: %d\n", irqNumber);
+    printk(KERN_INFO "GPIO_LKM: IRQ Number: %d\n", irqNumber);
 
     // This next call requests an interrupt line
     result = request_irq(irqNumber,             // The interrupt number requested
@@ -113,12 +114,12 @@ static int __init gpio_init(void){
                         IRQF_TRIGGER_FALLING,   // Interrupt on rising edge (button press, not release)
                         "elec424_gpio_handler",    // Used in /proc/interrupts to identify the owner
                         NULL);                 // The *dev_id for shared interrupt lines, NULL is okay
-
-    printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
+    
+    printk(KERN_INFO "GPIO_LKM: The interrupt request result is: %d\n", result);
 
     gpio_map = ioremap(GPIO3, 0x1000);
-    mmio = ioremap(GPIO3, 0x1000);
-    printk(KERN_INFO "GPIO_TEST: IOREMAP Maps GPIO3 to: %p", mmio);
+    // mmio = ioremap(GPIO3, 0x1000);
+    printk(KERN_INFO "GPIO_LKM: IOREMAP Maps GPIO3 to: %p\n", gpio_map);
 
 
     return result;
@@ -133,9 +134,9 @@ static void __exit gpio_exit(void){
     class_unregister(ebbcharClass);                          // unregister the device class
     class_destroy(ebbcharClass);                             // remove the device class
     unregister_chrdev(majorNumber, DEVICE_NAME);             // unregister the major number
-    printk(KERN_INFO "EBBChar: Goodbye from the LKM!\n");
+    printk(KERN_INFO "GPIO_LKM: Goodbye from the LKM!\n");
     free_irq(irqNumber, NULL);               // Free the IRQ number, no *dev_id required in this case
-    printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
+    printk(KERN_INFO "GPIO_LKM: Goodbye from the LKM!\n");
 }
 
 /** @brief The device open function that is called each time the device is opened
@@ -144,7 +145,7 @@ static void __exit gpio_exit(void){
  *  @param filep A pointer to a file object (defined in linux/fs.h)
  */
 static int dev_open(struct inode *inodep, struct file *filep){
-   printk(KERN_INFO "EBBChar: Device has been opened\n");
+   printk(KERN_INFO "GPIO_LKM: Device has been opened\n");
    return 0;
 }
 
@@ -155,7 +156,7 @@ static int dev_open(struct inode *inodep, struct file *filep){
  *  @param filep A pointer to a file object (defined in linux/fs.h)
  */
 static int dev_release(struct inode *inodep, struct file *filep){
-   printk(KERN_INFO "EBBChar: Device successfully closed\n");
+   printk(KERN_INFO "GPIO_LKM: Device successfully closed\n");
    return 0;
 }
 
@@ -166,30 +167,33 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     {
         case IOCTL_GET_VALUE:
         {
-            printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_GETVALUE\n");
+            printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
             
             capacitance = timediff.tv_nsec;
             if (copy_to_user((long *) arg, &capacitance, sizeof(long))) {
-                printk(KERN_ALERT "GPIOTEST: copy_to_user failed\n");
+                printk(KERN_ALERT "GPIO_LKM: copy_to_user failed\n");
 		        return -EFAULT; 
             }
-            printk(KERN_INFO "GPIOTEST: copy_to_user succeeded.\n");
+            printk(KERN_INFO "GPIO_LKM: copy_to_user succeeded.\n");
             return capacitance;
         }
         break;
 
         case IOCTL_MEASURE_CAPACITANCE:
         {
-            printk(KERN_INFO "GPIOTEST: Hello from MYGPIO_MEASURE_CAPACITANCE\n");
+            printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_MEASURE_CAPACITANCE\n");
             custom_set_gpio_direction(PIN_19, 0); // set pin to output
             custom_set_gpio_dataout_reg(PIN_19, 1); // set pin to high
+            dataoutValue = custom_get_gpio_dataout(PIN_19);
             // THIS IS WHERE THE ERROR IS HAPPENING
-            if (!custom_get_gpio_dataout(PIN_19)) {   // gpio is not set to high
-                printk(KERN_INFO "GPIOTEST: Dataout register not set to high...\n");
+            if (!) {   // gpio is not set to high
+                printk(KERN_INFO "GPIO_LKM: Dataout register not set to high...\n");
                 return -EFAULT;
             }
-            getnstimeofday(&tic);
             custom_set_gpio_direction(PIN_19, 1); // set pin to input
+            getnstimeofday(&tic);
+            printk(KERN_INFO "GPIO")
+
         }
         break;
     }
@@ -217,7 +221,7 @@ static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct 
     timediff = timespec_sub(toc,tic); 
     custom_set_gpio_direction(PIN_19, 0);  // set GPIO to output
     custom_set_gpio_dataout_reg(PIN_19, 1); // set GPIO to high
-    printk(KERN_INFO "GPIO_TEST: Interrupt!");
+    printk(KERN_INFO "GPIO_LKM: Interrupt!");
     return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
 }
 
@@ -228,9 +232,12 @@ static irq_handler_t gpio424_irq_handler(unsigned int irq, void *dev_id, struct 
 static void custom_set_gpio_direction(int gpio, int is_input)
 {
 	// hard code the base value...
-	void __iomem *reg = (void *) (long) gpio_map + GPIO_OE; // this is correct base 
+	void __iomem *reg = (void *) (long) gpio_map + GPIO_OE; // this is correct base
+    printk(KERN_INFO "GPIO_LKM: SET_GPIO_DIRECTION: %p", reg);
 	u32 l;
     l = readl_relaxed(reg);
+    printk(KERN_INFO "GPIO_LKM: SET_GPIO_DIRECTION: Register value: %u", l);
+
 	if (is_input)
 		l |= BIT(gpio);
 	else
@@ -241,11 +248,12 @@ static void custom_set_gpio_direction(int gpio, int is_input)
 static void custom_set_gpio_dataout_reg(unsigned offset, int enable)
 {
     void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAOUT;
+    printk(KERN_INFO "GPIO_LKM: SET_GPIO_REG: %p", reg);
 	u32 gpio_bit = BIT(offset);
 	u32 l;
 
 	l = readl_relaxed(reg);
-	if (enable)
+    printk(KERN_INFO "GPIO_LKM: SET_GPIO_REG: Register value: %u", l);
 		l |= gpio_bit;
 	else
 		l &= ~gpio_bit;
@@ -261,6 +269,8 @@ static int custom_get_gpio_datain(int offset)
 static int custom_get_gpio_dataout(int offset)
 {
 	void __iomem *reg = (void *) (long) gpio_map + GPIO_DATAOUT;
+    printk(KERN_INFO "GPIO_LKM: GET_GPIO_DATAOUT: %p", reg);
+
     // printk(KERN_INFO "CUSTOM_DATAOUT: The register is ");
 	return (readl_relaxed(reg) & (BIT(offset))) != 0;
 }

@@ -10,16 +10,21 @@
 
 int main(int argc, char *argv[]) {
     long capValue = 0;
+    long capReturnVal = 0;
     int fd = open("/dev/gpio424", O_RDWR);
     if (fd < 0){
       perror("Failed to open the device...");
       return errno;
-   }
-    printf("Measuring capacitance...\n");
-    ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
-    printf("done.\n");
-    capValue = ioctl(fd, IOCTL_GET_VALUE, &capValue);
-    printf("Value from capacitance measure is %ld \n", capValue);
+    }
+    int i;
+    for (i=0; i<1000; i++) {
+            printf("Measuring capacitance...\n");
+        ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
+        printf("done.\n");
+        capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue);
+        printf("Capacitance: %ld  | (pointer is %ld) \n", capReturnVal, capValue);
+        delay(100);
+    }
     close(fd);
     return 0;
 }
