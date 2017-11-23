@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     int i;
     for (i=0; i<NUM_CALIBRATE; i++) {
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
-        capReturnVal = 1.0 * (ioctl(fd, IOCTL_GET_VALUE, &capValue) / CLOCK_SPEED;
+        capReturnVal = 1.0 * ioctl(fd, IOCTL_GET_VALUE, &capValue) / CLOCK_SPEED;
         calibrationVal += capReturnVal;
     }
     // set threshold for measuring touch
@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
     for (i=0; i<5000; i++){
     // do nothing
     }
+
     for (i=0; i<10000; i++) {
             // printf("Measuring capacitance...\n");
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
