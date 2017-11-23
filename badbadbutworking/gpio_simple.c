@@ -82,7 +82,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             // NEED TO ADJUST GPIOD_DIRECTION_OUTPUT_RAW IN GPIOLIB.C TO ALLOW OUTPUT
             printk(KERN_INFO "GPIO_LKM: GPIO OUT, set to: %d \n",gpio_get_value(gpioButton));
             getrawmonotonic(&tic);
-            printk(KERN_INFO "GPIO_LKM: tic (%d) \n", tic.tv_nsec);
+            printk(KERN_INFO "GPIO_LKM: tic (%ld) \n", tic.tv_nsec);
             gpio_direction_input(gpioButton);
         }
         break;
@@ -103,9 +103,9 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
  */
 static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
     getrawmonotonic(&toc);
-    printk(KERN_INFO "GPIO_LKM: toc (%d) \n", toc.tv_nsec);
+    printk(KERN_INFO "GPIO_LKM: toc (%ld) \n", toc.tv_nsec);
     timediff = timespec_sub(toc, tic);
-    printk(KERN_INFO "GPIO_TEST: timediff (%d) \n", timediff.tv_nsec);
+    printk(KERN_INFO "GPIO_TEST: timediff (%ld) \n", timediff.tv_nsec);
     gpio_direction_output(gpioButton, 1);
     printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
     return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
