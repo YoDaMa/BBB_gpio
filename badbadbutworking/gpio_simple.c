@@ -43,12 +43,14 @@ static struct file_operations fops = {
     .open = dev_open,
     .release = dev_release,
     .unlocked_ioctl = dev_ioctl
-}
+};
 
 
 /// Function prototype for the custom IRQ handler function -- see below for the implementation
 static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
-
+static int     dev_open(struct inode *, struct file *);
+static int     dev_release(struct inode *, struct file *);
+static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 static int dev_open(struct inode *inodep, struct file *filep){
    printk(KERN_INFO "GPIO_LKM: Device has been opened\n");
