@@ -17,11 +17,11 @@ int main(int argc, char *argv[]) {
     }
     int i;
     for (i=0; i<10000; i++) {
-            printf("Measuring capacitance...\n");
+            // printf("Measuring capacitance...\n");
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
-        printf("done.\n");
+        // printf("done.\n");
         capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue);
-        printf("Capacitance: %ld  | (pointer is %ld) \n", capReturnVal, capValue);
+        printf("Capacitance (ns): %lf \n", 1.0 * capReturnVal / CLOCK_SPEED);
     }
     close(fd);
     return 0;
