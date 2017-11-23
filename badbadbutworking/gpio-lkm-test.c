@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <fcntl.h> 
 #include <unistd.h>
 #include <errno.h>
@@ -17,13 +16,12 @@ int main(int argc, char *argv[]) {
       return errno;
     }
     int i;
-    for (i=0; i<1000; i++) {
+    for (i=0; i<10000; i++) {
             printf("Measuring capacitance...\n");
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
         printf("done.\n");
         capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue);
         printf("Capacitance: %ld  | (pointer is %ld) \n", capReturnVal, capValue);
-        delay(100);
     }
     close(fd);
     return 0;
