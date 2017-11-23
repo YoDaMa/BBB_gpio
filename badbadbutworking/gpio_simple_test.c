@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
         calibrationVal += capReturnVal;
     }
     // set threshold for measuring touch
-    calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.3;
+    calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.5;
     printf("Finsihed Calibrating. \n");
     printf("Calibration value is: %f  \n", calibrationVal);
 
