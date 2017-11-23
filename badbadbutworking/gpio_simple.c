@@ -68,7 +68,6 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case IOCTL_GET_VALUE:
         {
             printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
-            
             capacitance = timediff.tv_nsec;
             printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
             return capacitance;
@@ -80,10 +79,11 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_MEASURE_CAPACITANCE\n");
             // set direction to out and value to HIGH
             gpio_direction_output(gpioButton, 1); // set pin to output
-            // 
-            printk(KERN_INFO "GPIO_LKM: After direction out, gpio value: %d \n",gpio_get_value(gpioButton));
+            // NEED TO ADJUST GPIOD_DIRECTION_OUTPUT_RAW IN GPIOLIB.C TO ALLOW OUTPUT
+            printk(KERN_INFO "GPIO_LKM: GPIO OUT, set to: %d \n",gpio_get_value(gpioButton));
+            getrawmonotonic(&tic);
+            printk(KERN_INFO "GPIO_LKM: tic (%d) \n", tic.tv_nsec);
             gpio_direction_input(gpioButton);
-            getnstimeofday(&tic);
         }
         break;
     }
@@ -102,11 +102,12 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
  *  return returns IRQ_HANDLED if successful -- should return IRQ_NONE otherwise.
  */
 static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
-    getnstimeofday(&toc);
+    getrawmonotonic(&toc);
+    printk(KERN_INFO "GPIO_LKM: toc (%d) \n", toc.tv_nsec);
     timediff = timespec_sub(toc, tic);
-    printk(KERN_INFO "GPIO_TEST: Timediff: %d \n", timediff.tv_nsec);
+    printk(KERN_INFO "GPIO_TEST: timediff (%d) \n", timediff.tv_nsec);
     gpio_direction_output(gpioButton, 1);
-    printk(KERN_INFO "GPIO_TEST: Interrupt! (button state is %d)\n", gpio_get_value(gpioButton));
+    printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
     return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
 }
 
