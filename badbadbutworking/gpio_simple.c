@@ -70,7 +70,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             // printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
             capacitance = timediff.tv_nsec;
             // printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
-            return capacitance;
+            return timediff.tv_nsec;
         }
         break;
 
