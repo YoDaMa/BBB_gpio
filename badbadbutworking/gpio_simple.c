@@ -38,6 +38,11 @@ static int    majorNumber;                  ///< Stores the device number -- det
 static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 
+/// Function prototype for the custom IRQ handler function -- see below for the implementation
+static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
+static int     dev_open(struct inode *, struct file *);
+static int     dev_release(struct inode *, struct file *);
+static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 static struct file_operations fops = {
     .open = dev_open,
@@ -45,12 +50,6 @@ static struct file_operations fops = {
     .unlocked_ioctl = dev_ioctl
 };
 
-
-/// Function prototype for the custom IRQ handler function -- see below for the implementation
-static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
-static int     dev_open(struct inode *, struct file *);
-static int     dev_release(struct inode *, struct file *);
-static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 static int dev_open(struct inode *inodep, struct file *filep){
    printk(KERN_INFO "GPIO_LKM: Device has been opened\n");
