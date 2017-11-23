@@ -26,10 +26,12 @@ static int gpioPIN = 115;                   // P9_27 | GPIO3_19
 static void __iomem *gpio_map;
 static void *mmio;
 static int dataoutValue;
+static unsigned int ccrInit = 1;            // used as a flag for the performance counter
+
+
 
 static irq_handler_t gpio424_irq_handler(unsigned int irt, void *dev_id, struct pt_regs *regs);
 
-static unsigned int ccrInit = 1;            // used as a flag for the performance counter
 
 // The prototype functions for the character driver -- must come before the struct definition
 static int     dev_open(struct inode *, struct file *);
@@ -238,10 +240,12 @@ static void custom_set_gpio_direction(int gpio, int is_input)
     l = readl_relaxed(reg);
     printk(KERN_INFO "GPIO_LKM: SET_GPIO_DIRECTION: Register value: %u", l);
 
-	if (is_input)
+	if (is_input) {
 		l |= BIT(gpio);
-	else
+    }
+	else {
 		l &= ~(BIT(gpio));
+    }
 	writel_relaxed(l, reg);
 }
 
@@ -254,9 +258,12 @@ static void custom_set_gpio_dataout_reg(unsigned offset, int enable)
 
 	l = readl_relaxed(reg);
     printk(KERN_INFO "GPIO_LKM: SET_GPIO_REG: Register value: %u", l);
+    if (enable) {
 		l |= gpio_bit;
-	else
+    }
+	else {
 		l &= ~gpio_bit;
+    }
 	writel_relaxed(l, reg);
 }
 
