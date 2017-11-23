@@ -14,6 +14,13 @@
 #include <linux/kernel.h>
 #include <linux/gpio.h>                 // Required for the GPIO functions
 #include <linux/interrupt.h>            // Required for the IRQ code
+#include <linux/device.h>         // Header to support the kernel Driver Model
+#include <linux/fs.h>             // Header for the Linux file system support
+#include <asm/uaccess.h>          // Required for the copy to user function
+#include <linux/time.h>
+#include "beaglebone-gpio.h"
+
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Derek Molloy");
@@ -22,11 +29,84 @@ MODULE_VERSION("0.1");
 
 static unsigned int gpioButton = 115;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
-static unsigned int numberPresses = 0;  ///< For information, store the number of button presses
-static bool	    ledOn = 0;          ///< Is the LED on or off? Used to invert its state (off by default)
+static long capacitance;
+static struct timespec tic, toc, timediff;
+static int    majorNumber;                  ///< Stores the device number -- determined automatically
+static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
+static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
+
+
+static struct file_operations fops = {
+    .open = dev_open,
+    .release = dev_release,
+    .unlocked_ioctl = dev_ioctl
+}
+
 
 /// Function prototype for the custom IRQ handler function -- see below for the implementation
 static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
+
+
+static int dev_open(struct inode *inodep, struct file *filep){
+   printk(KERN_INFO "GPIO_LKM: Device has been opened\n");
+   return 0;
+}
+
+static int dev_release(struct inode *inodep, struct file *filep){
+   printk(KERN_INFO "GPIO_LKM: Device successfully closed\n");
+   return 0;
+}
+
+static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    switch (cmd)
+    {
+        case IOCTL_GET_VALUE:
+        {
+            printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
+            
+            capacitance = timediff.tv_nsec;
+            printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
+            return capacitance;
+        }
+        break;
+
+        case IOCTL_MEASURE_CAPACITANCE:
+        {
+            printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_MEASURE_CAPACITANCE\n");
+            // set direction to out and value to HIGH
+            gpio_direction_output(gpioButton, 1); // set pin to output
+            // 
+            printk(KERN_INFO "GPIO_LKM: After direction out, gpio value: %d \n",gpio_get_value(gpioButton));
+            gpio_direction_input(gpioButton);
+            getnstimeofday(&tic);
+        }
+        break;
+    }
+    return 0;
+}
+
+
+/** @brief The GPIO IRQ Handler function
+ *  This function is a custom interrupt handler that is attached to the GPIO above. The same interrupt
+ *  handler cannot be invoked concurrently as the interrupt line is masked out until the function is complete.
+ *  This function is static as it should not be invoked directly from outside of this file.
+ *  @param irq    the IRQ number that is associated with the GPIO -- useful for logging.
+ *  @param dev_id the *dev_id that is provided -- can be used to identify which device caused the interrupt
+ *  Not used in this example as NULL is passed.
+ *  @param regs   h/w specific register values -- only really ever used for debugging.
+ *  return returns IRQ_HANDLED if successful -- should return IRQ_NONE otherwise.
+ */
+static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
+    getnstimeofday(&toc);
+    timediff = timespec_sub(toc, tic);
+    printk(KERN_INFO "GPIO_TEST: Timediff: %d \n", timediff.tv_nsec);
+    gpio_direction_output(gpioButton, 1);
+    printk(KERN_INFO "GPIO_TEST: Interrupt! (button state is %d)\n", gpio_get_value(gpioButton));
+    return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
+}
+
+
 
 /** @brief The LKM initialization function
  *  The static keyword restricts the visibility of the function to within this C file. The __init
@@ -60,6 +140,36 @@ static int __init ebbgpio_init(void){
                         NULL);                 // The *dev_id for shared interrupt lines, NULL is okay
 
    printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
+   
+   
+    // Try to dynamically allocate a major number for the device -- more difficult but worth it
+    majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
+    if (majorNumber<0){
+        printk(KERN_ALERT "GPIO_LKM: failed to register a major number\n");
+        return majorNumber;
+    }
+    printk(KERN_INFO "GPIO_LKM: registered correctly with major number %d\n", majorNumber);
+
+    // Register the device class
+    ebbcharClass = class_create(THIS_MODULE, CLASS_NAME);
+    if (IS_ERR(ebbcharClass)){                // Check for error and clean up if there is
+        unregister_chrdev(majorNumber, DEVICE_NAME);
+        printk(KERN_ALERT "Failed to register device class\n");
+        return PTR_ERR(ebbcharClass);          // Correct way to return an error on a pointer
+    }
+    printk(KERN_INFO "GPIO_LKM: device class registered correctly\n");
+
+    // Register the device driver
+    ebbcharDevice = device_create(ebbcharClass, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
+    if (IS_ERR(ebbcharDevice)){               // Clean up if there is an error
+        class_destroy(ebbcharClass);           // Repeated code but the alternative is goto statements
+        unregister_chrdev(majorNumber, DEVICE_NAME);
+        printk(KERN_ALERT "Failed to create the device\n");
+        return PTR_ERR(ebbcharDevice);
+    }
+    printk(KERN_INFO "GPIO_LKM: device class created correctly\n"); // Made it! device was initialized
+
+   
    return result;
 }
 
@@ -69,6 +179,11 @@ static int __init ebbgpio_init(void){
  *  GPIOs and display cleanup messages.
  */
 static void __exit ebbgpio_exit(void){
+    device_destroy(ebbcharClass, MKDEV(majorNumber, 0));     // remove the device
+    class_unregister(ebbcharClass);                          // unregister the device class
+    class_destroy(ebbcharClass);                             // remove the device class
+    unregister_chrdev(majorNumber, DEVICE_NAME);             // unregister the major number
+
    printk(KERN_INFO "GPIO_TEST: The button state is currently: %d\n", gpio_get_value(gpioButton));
    free_irq(irqNumber, NULL);               // Free the IRQ number, no *dev_id required in this case
    gpio_unexport(gpioButton);               // Unexport the Button GPIO
@@ -76,21 +191,6 @@ static void __exit ebbgpio_exit(void){
    printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
 }
 
-/** @brief The GPIO IRQ Handler function
- *  This function is a custom interrupt handler that is attached to the GPIO above. The same interrupt
- *  handler cannot be invoked concurrently as the interrupt line is masked out until the function is complete.
- *  This function is static as it should not be invoked directly from outside of this file.
- *  @param irq    the IRQ number that is associated with the GPIO -- useful for logging.
- *  @param dev_id the *dev_id that is provided -- can be used to identify which device caused the interrupt
- *  Not used in this example as NULL is passed.
- *  @param regs   h/w specific register values -- only really ever used for debugging.
- *  return returns IRQ_HANDLED if successful -- should return IRQ_NONE otherwise.
- */
-static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
-   gpio_direction_output(gpioButton, 1);
-   printk(KERN_INFO "GPIO_TEST: Interrupt! (button state is %d)\n", gpio_get_value(gpioButton));
-   return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
-}
 
 /// This next calls are  mandatory -- they identify the initialization function
 /// and the cleanup function (as above).

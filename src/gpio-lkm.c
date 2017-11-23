@@ -188,14 +188,12 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             custom_set_gpio_dataout_reg(PIN_19, 1); // set pin to high
             dataoutValue = custom_get_gpio_dataout(PIN_19);
             // THIS IS WHERE THE ERROR IS HAPPENING
-            if (!) {   // gpio is not set to high
-                printk(KERN_INFO "GPIO_LKM: Dataout register not set to high...\n");
-                return -EFAULT;
-            }
+            // if (0) {   // gpio is not set to high
+            //     printk(KERN_INFO "GPIO_LKM: Dataout register not set to high...\n");
+            //     return -EFAULT;
+            // }
             custom_set_gpio_direction(PIN_19, 1); // set pin to input
             getnstimeofday(&tic);
-            printk(KERN_INFO "GPIO")
-
         }
         break;
     }
