@@ -4,7 +4,7 @@ CC  := arm-linux-gnueabihf-gcc
 
 all:
 	$(MAKE) -C $(KDIR) M=$(shell pwd) modules
-	$(CC) gpio_simple_test.c -o gpio_simple_test
+	$(CC) gpio-lkm-test.c -o test
 clean:
 	$(MAKE) -C $(KDIR) M=$(shell pwd) clean
 	rm test
