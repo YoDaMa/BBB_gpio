@@ -10,8 +10,8 @@
 
 int main(int argc, char *argv[]) {
     long capValue = 0;
-    float long capReturnVal = 0;
-    float long calibrationVal = 0.0;
+    float capReturnVal = 0;
+    float calibrationVal = 0.0;
     int fd = open("/dev/simplegpio424", O_RDWR);
     if (fd < 0){
       perror("Failed to open the device...");
@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
     calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.3;
 
 
-    int 
     for (i=0; i<10000; i++) {
             // printf("Measuring capacitance...\n");
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
@@ -36,9 +35,9 @@ int main(int argc, char *argv[]) {
         capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue) * 1.0 / CLOCK_SPEED;
 
         if (capReturnVal > calibrationVal) {
-            printf("(%lf) Touch Detected!\n", capReturnVal);
+            printf("(%f) Touch Detected!\n", capReturnVal);
         } else {
-            printf("(%lf) nothing...\n", capReturnVal);
+            printf("(%f) nothing...\n", capReturnVal);
         }
     }
     close(fd);
