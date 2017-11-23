@@ -20,6 +20,9 @@
 #include <linux/time.h>
 #include "beaglebone-gpio.h"
 
+#define  DEVICE_NAME "simplegpio424"    ///< The device will appear at /dev/gpio424 using this value
+#define  CLASS_NAME  "elec"        ///< The device class -- this is a character device driver
+
 
 
 MODULE_LICENSE("GPL");

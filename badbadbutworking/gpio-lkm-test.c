@@ -11,7 +11,7 @@
 int main(int argc, char *argv[]) {
     long capValue = 0;
     long capReturnVal = 0;
-    int fd = open("/dev/gpio424", O_RDWR);
+    int fd = open("/dev/simplegpio424", O_RDWR);
     if (fd < 0){
       perror("Failed to open the device...");
       return errno;
