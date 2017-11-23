@@ -11,7 +11,7 @@
 int main(int argc, char *argv[]) {
     long capValue = 0;
     float capReturnVal = 0;
-    float calibrationVal = 0.0;
+    static float calibrationVal = 0.0;
     int fd = open("/dev/simplegpio424", O_RDWR);
     if (fd < 0){
       perror("Failed to open the device...");
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
         calibrationVal += capReturnVal;
     }
     // set threshold for measuring touch
-    calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.3;
+    calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.5;
 
 
     for (i=0; i<10000; i++) {
@@ -35,9 +35,9 @@ int main(int argc, char *argv[]) {
         capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue) * 1.0 / CLOCK_SPEED;
 
         if (capReturnVal > calibrationVal) {
-            printf("(%f) Touch Detected!\n", capReturnVal);
+            printf("(%f > %f) Touch Detected!\n", capReturnVal, calibrationVal);
         } else {
-            printf("(%f) nothing...\n", capReturnVal);
+            printf("(%f < %f) nothing...\n", capReturnVal, calibrationVal);
         }
     }
     close(fd);
