@@ -6,7 +6,7 @@
 #include <sys/ioctl.h>
 #include "beaglebone-gpio.h"
 
-#define NUM_CALIBRATE 3000
+#define NUM_CALIBRATE 10000
 
 int main(int argc, char *argv[]) {
     long capValue = 0;
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         if (capReturnVal > calibrationVal) {
             printf("(%f > %f) Touch Detected!\n", capReturnVal, calibrationVal);
         } else {
-            printf("(%f < %f) nothing...\n", capReturnVal, calibrationVal);
+            // printf("(%f < %f) nothing...\n", capReturnVal, calibrationVal);
         }
     }
     close(fd);
