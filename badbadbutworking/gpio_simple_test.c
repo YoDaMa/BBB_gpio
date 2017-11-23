@@ -6,7 +6,7 @@
 #include <sys/ioctl.h>
 #include "beaglebone-gpio.h"
 
-#define NUM_CALIBRATE 500;
+#define NUM_CALIBRATE 500
 
 int main(int argc, char *argv[]) {
     long capValue = 0;
