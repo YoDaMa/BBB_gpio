@@ -109,8 +109,8 @@ static ssize_t isDebounce_store(struct kobject *kobj, struct kobj_attribute *att
  *  The count variable is associated with the numberPresses variable and it is to be exposed
  *  with mode 0666 using the numberPresses_show and numberPresses_store functions above
  */
-static struct kobj_attribute count_attr = __ATTR(numberPresses, 0666, numberPresses_show, numberPresses_store);
-static struct kobj_attribute debounce_attr = __ATTR(isDebounce, 0666, isDebounce_show, isDebounce_store);
+static struct kobj_attribute count_attr = __ATTR(numberPresses, 0660, numberPresses_show, numberPresses_store);
+static struct kobj_attribute debounce_attr = __ATTR(isDebounce, 0660, isDebounce_show, isDebounce_store);
 
 /**  The __ATTR_RO macro defines a read-only attribute. There is no need to identify that the
  *  function is called _show, but it must be present. __ATTR_WO can be  used for a write-only
