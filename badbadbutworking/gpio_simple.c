@@ -125,7 +125,7 @@ static ssize_t elec424_store(struct kobject *kobj, struct kobj_attribute *attr, 
  *  The count variable is associated with the numberPresses variable and it is to be exposed
  *  with mode 0666 using the numberPresses_show and numberPresses_store functions above
  */
-static struct kobj_attribute elec424_attr = __ATTR(isMeasure, 0666, elec424_show, elec424_store);
+static struct kobj_attribute elec424_attr = __ATTR(isMeasure, 0660, elec424_show, elec424_store);
  
 
 /**  The __ATTR_RO macro defines a read-only attribute. There is no need to identify that the
