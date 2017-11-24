@@ -141,7 +141,7 @@ static struct attribute *ebb_attrs[] = {
       NULL,
 };
 
-static struct attribute_group attr_gorup = {
+static struct attribute_group attr_group = {
     .name = gpioName,
     .attrs = ebb_attrs,
 };
