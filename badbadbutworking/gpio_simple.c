@@ -221,6 +221,8 @@ static int __init ebbgpio_init(void){
         return result;
     }
 
+    return result;
+
 }
 
 /** @brief The LKM cleanup function
@@ -234,11 +236,11 @@ static void __exit ebbgpio_exit(void){
     class_destroy(ebbcharClass);                             // remove the device class
     unregister_chrdev(majorNumber, DEVICE_NAME);             // unregister the major number
 
-   printk(KERN_INFO "GPIO_TEST: The button state is currently: %d\n", gpio_get_value(gpioButton));
-   free_irq(irqNumber, NULL);               // Free the IRQ number, no *dev_id required in this case
-   gpio_unexport(gpioButton);               // Unexport the Button GPIO
-   gpio_free(gpioButton);                   // Free the Button GPIO
-   printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
+    printk(KERN_INFO "GPIO_TEST: The button state is currently: %d\n", gpio_get_value(gpioButton));
+    free_irq(irqNumber, NULL);               // Free the IRQ number, no *dev_id required in this case
+    gpio_unexport(gpioButton);               // Unexport the Button GPIO
+    gpio_free(gpioButton);                   // Free the Button GPIO
+    printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
     kobject_put(ebb_kobj);
 
 }
