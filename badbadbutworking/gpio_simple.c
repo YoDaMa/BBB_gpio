@@ -18,6 +18,11 @@
 #include <linux/fs.h>             // Header for the Linux file system support
 #include <asm/uaccess.h>          // Required for the copy to user function
 #include <linux/time.h>
+#include <linux/slab.h>
+#include <linux/kobject.h>
+#include <linux/string.h>
+#include <linux/sysfs.h>
+
 #include "beaglebone-gpio.h"
 
 #define  DEVICE_NAME "simplegpio424"    ///< The device will appear at /dev/gpio424 using this value
@@ -31,23 +36,25 @@ MODULE_DESCRIPTION("A Button/LED test driver for the BBB");
 MODULE_VERSION("0.1");
 
 static unsigned int gpioButton = 115;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
+module_parm(gpioButton, uint, S_IRUGO);
+MODULE_PARM_DESC(gpioButton, " GPIO wire number (default=115)");
+
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
 static long capacitance;
 static struct timespec tic, toc, timediff;
 static int    majorNumber;                  ///< Stores the device number -- determined automatically
 static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
-
+static char   gpioName[8] = "gpioXXX";      ///< Null terminated default string -- just in case
 /// Function prototype for the custom IRQ handler function -- see below for the implementation
 static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
 static int     dev_open(struct inode *, struct file *);
 static int     dev_release(struct inode *, struct file *);
-static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 static struct file_operations fops = {
+    .owner = THIS_MODULE,
     .open = dev_open,
     .release = dev_release,
-    .unlocked_ioctl = dev_ioctl
 };
 
 
@@ -59,35 +66,6 @@ static int dev_open(struct inode *inodep, struct file *filep){
 static int dev_release(struct inode *inodep, struct file *filep){
    printk(KERN_INFO "GPIO_LKM: Device successfully closed\n");
    return 0;
-}
-
-static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-{
-    switch (cmd)
-    {
-        case IOCTL_GET_VALUE:
-        {
-            // printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
-            capacitance = timediff.tv_nsec;
-            // printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
-            return timediff.tv_nsec;
-        }
-        break;
-
-        case IOCTL_MEASURE_CAPACITANCE:
-        {
-            // printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_MEASURE_CAPACITANCE\n");
-            // set direction to out and value to HIGH
-            gpio_direction_output(gpioButton, 1); // set pin to output
-            // NEED TO ADJUST GPIOD_DIRECTION_OUTPUT_RAW IN GPIOLIB.C TO ALLOW OUTPUT
-            // printk(KERN_INFO "GPIO_LKM: GPIO OUT, set to: %d \n",gpio_get_value(gpioButton));
-            getrawmonotonic(&tic);
-            // printk(KERN_INFO "GPIO_LKM: tic (%ld) \n", tic.tv_nsec);
-            gpio_direction_input(gpioButton);
-        }
-        break;
-    }
-    return 0;
 }
 
 
@@ -113,6 +91,62 @@ static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct 
 
 
 
+/** @brief Displays if button debouncing is on or off */
+static ssize_t diffTime_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+   return sprintf(buf, "%lu\n", timediff.tv_nsec);
+}
+
+/* Displays if measure capacitance is on or off */
+static ssize_t elec424_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+    return sprintf(buf, "%d\n", isMeasure);
+}
+ 
+/** @brief Stores and sets the debounce state */
+static ssize_t elec424_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
+   unsigned int temp;
+   sscanf(buf, "%du", &temp);                // use a temp varable for correct int->bool
+   gpio_set_debounce(gpioButton,0);
+   isMeasure = temp;
+   if(isMeasure) { 
+        gpio_direction_output(gpioButton, 1); // set pin to output
+        getrawmonotonic(&tic);
+        gpio_direction_input(gpioButton);
+        printk(KERN_INFO "EBB Button: Capacitance measured.\n");
+   }
+   else {   // set the debounce time to 0
+      printk(KERN_INFO "EBB Button: Capacitance not measured.\n");
+   }
+   return count;
+}
+
+/**  Use these helper macros to define the name and access levels of the kobj_attributes
+ *  The kobj_attribute has an attribute attr (name and mode), show and store function pointers
+ *  The count variable is associated with the numberPresses variable and it is to be exposed
+ *  with mode 0666 using the numberPresses_show and numberPresses_store functions above
+ */
+static struct kobj_attribute elec424_attr = __ATTR(isMeasure, 0666, elec424_show, elec424_store);
+ 
+
+/**  The __ATTR_RO macro defines a read-only attribute. There is no need to identify that the
+ *  function is called _show, but it must be present. __ATTR_WO can be  used for a write-only
+ *  attribute but only in Linux 3.11.x on.
+ */
+static struct kobj_attribute diff_attr  = __ATTR_RO(diffTime);  ///< the difference in time attr
+ 
+
+static struct attribute *ebb_attrs[] = {
+      &diff_attr.attr,                   ///< The difference in time between the last two presses
+      &elec424_attr.attr,               ///< Is the debounce state true or false
+      NULL,
+};
+
+static struct attribute_group attr_gorup = {
+    .name = gpioName,
+    .attrs = ebb_attrs,
+};
+
+static struct kobject *ebb_kobj;
+
 /** @brief The LKM initialization function
  *  The static keyword restricts the visibility of the function to within this C file. The __init
  *  macro means that for a built-in driver (not a LKM) the function is only used at initialization
@@ -127,7 +161,7 @@ static int __init ebbgpio_init(void){
    // Going to set up the LED. It is a GPIO in output mode and will be on by default
    gpio_request(gpioButton, "sysfs");       // Set up the gpioButton
    gpio_direction_input(gpioButton);        // Set the button GPIO to be an input
-   gpio_set_debounce(gpioButton, 200);      // Debounce the button with a delay of 200ms
+//    gpio_set_debounce(gpioButton, 200);      // Debounce the button with a delay of 200ms
    gpio_export(gpioButton, false);          // Causes gpio115 to appear in /sys/class/gpio
 			                    // the bool argument prevents the direction from being changed
    // Perform a quick test to see that the button is working as expected on LKM load
@@ -174,8 +208,18 @@ static int __init ebbgpio_init(void){
     }
     printk(KERN_INFO "GPIO_LKM: device class created correctly\n"); // Made it! device was initialized
 
-   
-   return result;
+    ebb_kobj = kobject_create_and_add("ebb", kernel_kobj->parent);
+    if (!ebb_kobj){
+        printk(KERN_ALERT "EBB BUTTON: FAILED to create kobject mapping \n");
+        return -ENOMEM;
+    }
+    result = sysfs_create_group(ebb_kobj, &attr_group);
+    if(result) {
+        printk(KERN_ALERT "EBB Button: failed to create sysfs group\n");
+        kobject_put(ebb_kobj);
+        return result;
+    }
+
 }
 
 /** @brief The LKM cleanup function
@@ -194,6 +238,8 @@ static void __exit ebbgpio_exit(void){
    gpio_unexport(gpioButton);               // Unexport the Button GPIO
    gpio_free(gpioButton);                   // Free the Button GPIO
    printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
+    kobject_put(ebb_kobj);
+
 }
 
 
