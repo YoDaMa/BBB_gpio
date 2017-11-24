@@ -36,7 +36,7 @@ MODULE_DESCRIPTION("A Button/LED test driver for the BBB");
 MODULE_VERSION("0.1");
 
 static unsigned int gpioButton = 115;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
-module_parm(gpioButton, uint, S_IRUGO);
+module_param(gpioButton, uint, S_IRUGO);
 MODULE_PARM_DESC(gpioButton, " GPIO wire number (default=115)");
 
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
@@ -46,6 +46,7 @@ static int    majorNumber;                  ///< Stores the device number -- det
 static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
 static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
 static char   gpioName[8] = "gpioXXX";      ///< Null terminated default string -- just in case
+static bool   isMeasure = 0;               ///< Use to store the debounce state (on by default)
 /// Function prototype for the custom IRQ handler function -- see below for the implementation
 static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
 static int     dev_open(struct inode *, struct file *);
