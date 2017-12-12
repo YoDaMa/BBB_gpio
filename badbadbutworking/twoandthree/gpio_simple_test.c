@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
     // set threshold for measuring touch
     calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.3;
     printf("Finsihed Calibrating. \n");
+    calibrationVal = .000073;
     printf("Calibration value is: %f  \n", calibrationVal);
     char resp;
 
@@ -35,7 +36,7 @@ int main(int argc, char *argv[]) {
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
         // printf("done.\n");
         capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue) * 1.0 / CLOCK_SPEED;
-        printf("Proceed? (y/n) ");
+        printf("Proceed?");
         scanf("%c", &resp);
         if (capReturnVal > calibrationVal) {
             printf("(%f > %f) Touch Detected!\n", capReturnVal, calibrationVal);
