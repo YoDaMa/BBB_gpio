@@ -26,12 +26,12 @@
 
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Derek Molloy");
-MODULE_DESCRIPTION("A Button/LED test driver for the BBB");
+MODULE_AUTHOR("Yoseph Maguire");
+MODULE_DESCRIPTION("A Capacitance test driver for the BBB");
 MODULE_VERSION("0.1");
 
-static unsigned int gpioButton = 48;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
-// switched to GPIO48 P9_15 because things weren't working
+static unsigned int gpioButton = 49;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
+// switched to GPIO49 P9_23 because things weren't working
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
 static long capacitance;
 static struct timespec tic, toc, timediff;
@@ -70,7 +70,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         {
             printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
             capacitance = timediff.tv_nsec;
-            // printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
+            printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
             return timediff.tv_nsec;
         }
         break;
@@ -81,9 +81,9 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             // set direction to out and value to HIGH
             gpio_direction_output(gpioButton, 1); // set pin to output
             // NEED TO ADJUST GPIOD_DIRECTION_OUTPUT_RAW IN GPIOLIB.C TO ALLOW OUTPUT
-            // printk(KERN_INFO "GPIO_LKM: GPIO OUT, set to: %d \n",gpio_get_value(gpioButton));
+            printk(KERN_INFO "GPIO_LKM: GPIO OUT, set to: %d \n",gpio_get_value(gpioButton));
             getrawmonotonic(&tic);
-            // printk(KERN_INFO "GPIO_LKM: tic (%ld) \n", tic.tv_nsec);
+            printk(KERN_INFO "GPIO_LKM: tic (%ld) \n", tic.tv_nsec);
             gpio_direction_input(gpioButton);
         }
         break;
@@ -103,12 +103,13 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
  *  return returns IRQ_HANDLED if successful -- should return IRQ_NONE otherwise.
  */
 static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
+    printk(KERN_INFO "GPIO_LKM: Hello from EBBGPIO_IRQ_HANDLER\n");
     getrawmonotonic(&toc);
-    // printk(KERN_INFO "GPIO_LKM: toc (%ld) \n", toc.tv_nsec);
+    printk(KERN_INFO "GPIO_LKM: toc (%ld) \n", toc.tv_nsec);
     timediff = timespec_sub(toc, tic);
-    // printk(KERN_INFO "GPIO_TEST: timediff (%ld) \n", timediff.tv_nsec);
+    printk(KERN_INFO "GPIO_TEST: timediff (%ld) \n", timediff.tv_nsec);
     gpio_direction_output(gpioButton, 1);
-    // printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
+    printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
     return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
 }
 
