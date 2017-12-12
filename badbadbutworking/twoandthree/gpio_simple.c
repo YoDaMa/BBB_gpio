@@ -68,7 +68,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     {
         case IOCTL_GET_VALUE:
         {
-            // printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
+            printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_GET_VALUE\n");
             capacitance = timediff.tv_nsec;
             // printk(KERN_INFO "GPIO_LKM: returning capacitance value.\n");
             return timediff.tv_nsec;
@@ -77,7 +77,7 @@ static long dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
         case IOCTL_MEASURE_CAPACITANCE:
         {
-            // printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_MEASURE_CAPACITANCE\n");
+            printk(KERN_INFO "GPIO_LKM: Hello from IOCTL_MEASURE_CAPACITANCE\n");
             // set direction to out and value to HIGH
             gpio_direction_output(gpioButton, 1); // set pin to output
             // NEED TO ADJUST GPIOD_DIRECTION_OUTPUT_RAW IN GPIOLIB.C TO ALLOW OUTPUT
@@ -128,7 +128,7 @@ static int __init ebbgpio_init(void){
    // Going to set up the LED. It is a GPIO in output mode and will be on by default
    gpio_request(gpioButton, "sysfs");       // Set up the gpioButton
    gpio_direction_input(gpioButton);        // Set the button GPIO to be an input
-   gpio_set_debounce(gpioButton, 200);      // Debounce the button with a delay of 200ms
+   //gpio_set_debounce(gpioButton, 200);      // Debounce the button with a delay of 200ms
    gpio_export(gpioButton, false);          // Causes gpio115 to appear in /sys/class/gpio
 			                    // the bool argument prevents the direction from being changed
    // Perform a quick test to see that the button is working as expected on LKM load
