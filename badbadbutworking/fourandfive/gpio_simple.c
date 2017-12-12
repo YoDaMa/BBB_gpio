@@ -12,66 +12,42 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/gpio.h>                 // Required for the GPIO functions
-#include <linux/interrupt.h>            // Required for the IRQ code
-#include <linux/device.h>         // Header to support the kernel Driver Model
-#include <linux/fs.h>             // Header for the Linux file system support
-#include <asm/uaccess.h>          // Required for the copy to user function
-#include <linux/time.h>
-#include <linux/slab.h>
-#include <linux/kobject.h>
-#include <linux/string.h>
-#include <linux/sysfs.h>
+#include <linux/gpio.h>       // Required for the GPIO functions
+#include <linux/interrupt.h>  // Required for the IRQ code
+#include <linux/kobject.h>    // Using kobjects for the sysfs bindings
+#include <linux/time.h>       // Using the clock to measure time between button presses
+
 
 #include "beaglebone-gpio.h"
 
-#define  DEVICE_NAME "simplegpio424"    ///< The device will appear at /dev/gpio424 using this value
-#define  CLASS_NAME  "elec"        ///< The device class -- this is a character device driver
-
-
-
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Derek Molloy");
-MODULE_DESCRIPTION("A Button/LED test driver for the BBB");
+MODULE_AUTHOR("Yoseph Maguire");
+MODULE_DESCRIPTION("A Button GPIO LKM for BBB");
 MODULE_VERSION("0.1");
 
 static unsigned int gpioButton = 20;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
 module_param(gpioButton, uint, S_IRUGO);
 MODULE_PARM_DESC(gpioButton, " GPIO wire number (default=20)");
 
-static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
 
-static struct timespec tic, toc, timediff;
 
 
 
 static char   gpioName[8] = "gpioXXX";      ///< Null terminated default string -- just in case
+static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
 static bool   isMeasure = 0;               ///< Use to store the debounce state (on by default)
+static struct timespec tic, toc, timediff;
+
+
+
+
+
 /// Function prototype for the custom IRQ handler function -- see below for the implementation
 static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
 
 
 
 
-/** @brief The GPIO IRQ Handler function
- *  This function is a custom interrupt handler that is attached to the GPIO above. The same interrupt
- *  handler cannot be invoked concurrently as the interrupt line is masked out until the function is complete.
- *  This function is static as it should not be invoked directly from outside of this file.
- *  @param irq    the IRQ number that is associated with the GPIO -- useful for logging.
- *  @param dev_id the *dev_id that is provided -- can be used to identify which device caused the interrupt
- *  Not used in this example as NULL is passed.
- *  @param regs   h/w specific register values -- only really ever used for debugging.
- *  return returns IRQ_HANDLED if successful -- should return IRQ_NONE otherwise.
- */
-static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
-    getrawmonotonic(&toc);
-    // printk(KERN_INFO "GPIO_LKM: toc (%ld) \n", toc.tv_nsec);
-    timediff = timespec_sub(toc, tic);
-    // printk(KERN_INFO "GPIO_TEST: timediff (%ld) \n", timediff.tv_nsec);
-    gpio_direction_output(gpioButton, 1);
-    // printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
-    return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
-}
 
 
 
@@ -91,7 +67,6 @@ static ssize_t elec424_store(struct kobject *kobj, struct kobj_attribute *attr, 
    unsigned int temp;
    printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_STORE. \n");
    sscanf(buf, "%du", &temp);                // use a temp varable for correct int->bool
-   gpio_set_debounce(gpioButton,0);
    printk(KERN_INFO "GPIO_LKM: Set GPIO_DEBOUNCE to 0 \n");
    isMeasure = temp;
    if(isMeasure) { 
@@ -147,7 +122,7 @@ static int __init ebbgpio_init(void){
    printk(KERN_INFO "GPIO_TEST: Initializing the GPIO_TEST LKM\n");
    sprintf(gpioName, "gpio%d", gpioButton); // create the gpio20 name
 
-    ebb_kobj = kobject_create_and_add("ebb", kernel_kobj->parent);
+    ebb_kobj = kobject_create_and_add("elec424", kernel_kobj->parent);
     if (!ebb_kobj){
         printk(KERN_ALERT "EBB BUTTON: FAILED to create kobject mapping \n");
         return -ENOMEM;
@@ -200,6 +175,27 @@ static void __exit ebbgpio_exit(void){
     printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
 
 }
+
+/** @brief The GPIO IRQ Handler function
+ *  This function is a custom interrupt handler that is attached to the GPIO above. The same interrupt
+ *  handler cannot be invoked concurrently as the interrupt line is masked out until the function is complete.
+ *  This function is static as it should not be invoked directly from outside of this file.
+ *  @param irq    the IRQ number that is associated with the GPIO -- useful for logging.
+ *  @param dev_id the *dev_id that is provided -- can be used to identify which device caused the interrupt
+ *  Not used in this example as NULL is passed.
+ *  @param regs   h/w specific register values -- only really ever used for debugging.
+ *  return returns IRQ_HANDLED if successful -- should return IRQ_NONE otherwise.
+ */
+static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs){
+    getrawmonotonic(&toc);
+    // printk(KERN_INFO "GPIO_LKM: toc (%ld) \n", toc.tv_nsec);
+    timediff = timespec_sub(toc, tic);
+    // printk(KERN_INFO "GPIO_TEST: timediff (%ld) \n", timediff.tv_nsec);
+    gpio_direction_output(gpioButton, 1);
+    // printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
+    return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
+}
+
 
 
 /// This next calls are  mandatory -- they identify the initialization function
