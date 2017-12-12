@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     printf("Calibration value is: %f  \n", calibrationVal);
 
 
-    for (i=0; i<10000; i++) {
+    while(1) {
             // printf("Measuring capacitance...\n");
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
         // printf("done.\n");
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         if (capReturnVal > calibrationVal) {
             printf("(%f > %f) Touch Detected!\n", capReturnVal, calibrationVal);
         } else {
-            // printf("(%f < %f) nothing...\n", capReturnVal, calibrationVal);
+            printf("(%f < %f) nothing...\n", capReturnVal, calibrationVal);
         }
     }
     close(fd);
