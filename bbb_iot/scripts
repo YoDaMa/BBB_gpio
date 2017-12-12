@@ -1,0 +1,65 @@
+aws dynamodb create-table \
+    --table-name BuyList \
+    --attribute-definitions AttributeName=Purchase,AttributeType=S \
+    --key-schema AttributeName=Purchase,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --stream-specification StreamEnabled=true,StreamViewType=NEW_AND_OLD_IMAGES
+
+aws iam create-role --role-name PurchaseLambdaRole \
+    --path "/service-role/" \
+    --assume-role-policy-document file://trust-relationship.js
+
+
+aws iam put-role-policy --role-name PurchaseLambdaRole \
+    --policy-name PurchaseLambdaRolePolicy \
+    --policy-document file://role-policy.json
+
+aws sns create-topic --name purchaseTopic
+
+aws sns subscribe \
+    --topic-arn arn:aws:sns:us-east-1:165657364714:purchaseTopic \
+    --protocol email \
+    --notification-endpoint ydm1@rice.edu
+
+
+zip publishPurchase.zip publishPurchase.js
+
+
+aws iam get-role --role-name PurchaseLambdaRole
+
+
+"Arn": "arn:aws:iam::165657364714:role/service-role/PurchaseLambdaRole"
+
+
+aws lambda create-function \
+    --region us-east-1 \
+    --function-name publishPurchase \
+    --zip-file fileb://publishPurchase.zip \
+    --role arn:aws:iam::165657364714:role/service-role/PurchaseLambdaRole \
+    --handler publishPurchase.handler \
+    --timeout 5 \
+    --runtime nodejs4.3
+
+aws lambda invoke  --function-name publishPurchase --payload file://payload.json output.txt
+
+aws dynamodb describe-table --table-name BuyList
+
+arn:aws:dynamodb:us-east-1:165657364714:table/BuyList/stream/2017-12-05T16:19:06.704
+
+aws lambda create-event-source-mapping \
+    --region us-east-1 \
+    --function-name publishPurchase \
+    --event-source arn:aws:dynamodb:us-east-1:165657364714:table/BuyList/stream/2017-12-05T16:19:06.704  \
+    --batch-size 1 \
+    --starting-position TRIM_HORIZON
+
+arn:aws:lambda:us-east-1:165657364714:function:publishPurchase
+
+# TESTING CODE
+aws dynamodb update-item --table-name BuyList --key '{"Product": {"S": "Tea"}}' \
+    --update-expression "ADD Quantity :val" \
+    --expression-attribute-values '{":val":{"N": "1"}}' \
+    --return-values ALL_NEW
+
+
+

@@ -1,0 +1,14 @@
+{
+	"Product": {
+		"AttributeValueList": [
+			{"S": "Milk"}
+		],
+		"ComparisonOperator":"EQ"
+	},
+	"NumUnits": {
+		"AttributeValueList": [
+		{"N": "1"}
+		],
+		"ComparisonOperator": "EQ"
+	}
+}
