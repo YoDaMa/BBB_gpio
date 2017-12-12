@@ -30,7 +30,7 @@ MODULE_AUTHOR("Yoseph Maguire");
 MODULE_DESCRIPTION("A Capacitance test driver for the BBB");
 MODULE_VERSION("0.1");
 
-static unsigned int gpioButton = 49;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
+static unsigned int gpioButton = 20;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
 // switched to GPIO49 P9_23 because things weren't working
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
 static long capacitance;
