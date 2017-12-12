@@ -110,6 +110,7 @@ static struct attribute_group attr_group = {
 
 static struct kobject *ebb_kobj;
 
+
 /** @brief The LKM initialization function
  *  The static keyword restricts the visibility of the function to within this C file. The __init
  *  macro means that for a built-in driver (not a LKM) the function is only used at initialization
@@ -146,9 +147,9 @@ static int __init ebbgpio_init(void){
    printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
   
     /* Find the kobj from the path and parent kset */
-    kobj = kset_find_obj(kernel_kobj->kset, "elec424");
-    if (kobj) {
-        kobject_put(kobj);
+    ebb_kobj = kset_find_obj(kernel_kobj->kset, "elec424");
+    if (ebb_kobj) {
+        kobject_put(ebb_kobj);
     }
     
     ebb_kobj = kobject_create_and_add("elec424", kernel_kobj->parent);
