@@ -122,18 +122,7 @@ static int __init ebbgpio_init(void){
    printk(KERN_INFO "GPIO_TEST: Initializing the GPIO_TEST LKM\n");
    sprintf(gpioName, "gpio%d", gpioButton); // create the gpio20 name
 
-    ebb_kobj = kobject_create_and_add("elec424", kernel_kobj->parent);
-    if (!ebb_kobj){
-        printk(KERN_ALERT "EBB BUTTON: FAILED to create kobject mapping \n");
-        return -ENOMEM;
-    }
-    result = sysfs_create_group(ebb_kobj, &attr_group);
-    if(result) {
-        printk(KERN_ALERT "EBB Button: failed to create sysfs group\n");
-        kobject_put(ebb_kobj);
-        return result;
-    }
-    printk(KERN_INFO "GPIO_LKM: device kobject and sysfs created correctly\n");
+
 
    // Going to set up the LED. It is a GPIO in output mode and will be on by default
    gpio_request(gpioButton, "sysfs");       // Set up the gpioButton
@@ -156,6 +145,25 @@ static int __init ebbgpio_init(void){
 
    printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
   
+    /* Find the kobj from the path and parent kset */
+    kobj = kset_find_obj(kernel_kobj->kset, "elec424");
+    if (kobj) {
+        kobject_put(kobj);
+    }
+    
+    ebb_kobj = kobject_create_and_add("elec424", kernel_kobj->parent);
+    if (!ebb_kobj){
+        printk(KERN_ALERT "EBB BUTTON: FAILED to create kobject mapping \n");
+        return -ENOMEM;
+    }
+    result = sysfs_create_group(ebb_kobj, &attr_group);
+    if(result) {
+        printk(KERN_ALERT "EBB Button: failed to create sysfs group\n");
+        kobject_put(ebb_kobj);
+        return result;
+    }
+    printk(KERN_INFO "GPIO_LKM: device kobject and sysfs created correctly\n");
+
 
     return result;
 
