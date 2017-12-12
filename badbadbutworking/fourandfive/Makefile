@@ -1,4 +1,4 @@
-obj-m+=gpio_simple.o
+obj-m+=gpio_sysfs.o
 KDIR := ~/bb-kernel/KERNEL
 CC  := arm-linux-gnueabihf-gcc
 
