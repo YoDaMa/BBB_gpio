@@ -30,7 +30,8 @@ MODULE_AUTHOR("Derek Molloy");
 MODULE_DESCRIPTION("A Button/LED test driver for the BBB");
 MODULE_VERSION("0.1");
 
-static unsigned int gpioButton = 115;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
+static unsigned int gpioButton = 48;   ///< hard coding the button gpio for this example to P9_27 (GPIO115)
+// switched to GPIO48 P9_15 because things weren't working
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
 static long capacitance;
 static struct timespec tic, toc, timediff;
