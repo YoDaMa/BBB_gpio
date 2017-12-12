@@ -40,34 +40,17 @@ module_param(gpioButton, uint, S_IRUGO);
 MODULE_PARM_DESC(gpioButton, " GPIO wire number (default=20)");
 
 static unsigned int irqNumber;          ///< Used to share the IRQ number within this file
-static long capacitance;
+
 static struct timespec tic, toc, timediff;
-static int    majorNumber;                  ///< Stores the device number -- determined automatically
-static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
-static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
+
+
+
 static char   gpioName[8] = "gpioXXX";      ///< Null terminated default string -- just in case
 static bool   isMeasure = 0;               ///< Use to store the debounce state (on by default)
 /// Function prototype for the custom IRQ handler function -- see below for the implementation
 static irq_handler_t  ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct pt_regs *regs);
-static int     dev_open(struct inode *, struct file *);
-static int     dev_release(struct inode *, struct file *);
-
-static struct file_operations fops = {
-    .owner = THIS_MODULE,
-    .open = dev_open,
-    .release = dev_release,
-};
 
 
-static int dev_open(struct inode *inodep, struct file *filep){
-   printk(KERN_INFO "GPIO_LKM: Device has been opened\n");
-   return 0;
-}
-
-static int dev_release(struct inode *inodep, struct file *filep){
-   printk(KERN_INFO "GPIO_LKM: Device successfully closed\n");
-   return 0;
-}
 
 
 /** @brief The GPIO IRQ Handler function
@@ -99,20 +82,24 @@ static ssize_t diffTime_show(struct kobject *kobj, struct kobj_attribute *attr, 
 
 /* Displays if measure capacitance is on or off */
 static ssize_t elec424_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+    printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_SHOW. \n");
     return sprintf(buf, "%d\n", isMeasure);
 }
  
 /** @brief Stores and sets the debounce state */
 static ssize_t elec424_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
    unsigned int temp;
+   printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_STORE. \n");
    sscanf(buf, "%du", &temp);                // use a temp varable for correct int->bool
    gpio_set_debounce(gpioButton,0);
+   printk(KERN_INFO "GPIO_LKM: Set GPIO_DEBOUNCE to 0 \n");
    isMeasure = temp;
    if(isMeasure) { 
         gpio_direction_output(gpioButton, 1); // set pin to output
+        printk(KERN_INFO "GPIO_LKM: gpioButton set to: %d. \n", gpio_get_value(gpioButton)); 
         getrawmonotonic(&tic);
-        gpio_direction_input(gpioButton);
         printk(KERN_INFO "EBB Button: Capacitance measured.\n");
+        gpio_direction_input(gpioButton);
    }
    else {   // set the debounce time to 0
       printk(KERN_INFO "EBB Button: Capacitance not measured.\n");
@@ -158,11 +145,24 @@ static struct kobject *ebb_kobj;
 static int __init ebbgpio_init(void){
    int result = 0;
    printk(KERN_INFO "GPIO_TEST: Initializing the GPIO_TEST LKM\n");
+   sprintf(gpioName, "gpio%d", gpioButton); // create the gpio20 name
+
+    ebb_kobj = kobject_create_and_add("ebb", kernel_kobj->parent);
+    if (!ebb_kobj){
+        printk(KERN_ALERT "EBB BUTTON: FAILED to create kobject mapping \n");
+        return -ENOMEM;
+    }
+    result = sysfs_create_group(ebb_kobj, &attr_group);
+    if(result) {
+        printk(KERN_ALERT "EBB Button: failed to create sysfs group\n");
+        kobject_put(ebb_kobj);
+        return result;
+    }
+    printk(KERN_INFO "GPIO_LKM: device kobject and sysfs created correctly\n");
 
    // Going to set up the LED. It is a GPIO in output mode and will be on by default
    gpio_request(gpioButton, "sysfs");       // Set up the gpioButton
-   gpio_direction_input(gpioButton);        // Set the button GPIO to be an input
-//    gpio_set_debounce(gpioButton, 200);      // Debounce the button with a delay of 200ms
+   gpio_direction_output(gpioButton, 1);        // Set the button GPIO to be an input
    gpio_export(gpioButton, false);          // Causes gpio115 to appear in /sys/class/gpio
 			                    // the bool argument prevents the direction from being changed
    // Perform a quick test to see that the button is working as expected on LKM load
@@ -180,46 +180,7 @@ static int __init ebbgpio_init(void){
                         NULL);                 // The *dev_id for shared interrupt lines, NULL is okay
 
    printk(KERN_INFO "GPIO_TEST: The interrupt request result is: %d\n", result);
-   
-   
-    // Try to dynamically allocate a major number for the device -- more difficult but worth it
-    majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
-    if (majorNumber<0){
-        printk(KERN_ALERT "GPIO_LKM: failed to register a major number\n");
-        return majorNumber;
-    }
-    printk(KERN_INFO "GPIO_LKM: registered correctly with major number %d\n", majorNumber);
-
-    // Register the device class
-    ebbcharClass = class_create(THIS_MODULE, CLASS_NAME);
-    if (IS_ERR(ebbcharClass)){                // Check for error and clean up if there is
-        unregister_chrdev(majorNumber, DEVICE_NAME);
-        printk(KERN_ALERT "Failed to register device class\n");
-        return PTR_ERR(ebbcharClass);          // Correct way to return an error on a pointer
-    }
-    printk(KERN_INFO "GPIO_LKM: device class registered correctly\n");
-
-    // Register the device driver
-    ebbcharDevice = device_create(ebbcharClass, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
-    if (IS_ERR(ebbcharDevice)){               // Clean up if there is an error
-        class_destroy(ebbcharClass);           // Repeated code but the alternative is goto statements
-        unregister_chrdev(majorNumber, DEVICE_NAME);
-        printk(KERN_ALERT "Failed to create the device\n");
-        return PTR_ERR(ebbcharDevice);
-    }
-    printk(KERN_INFO "GPIO_LKM: device class created correctly\n"); // Made it! device was initialized
-
-    ebb_kobj = kobject_create_and_add("ebb", kernel_kobj->parent);
-    if (!ebb_kobj){
-        printk(KERN_ALERT "EBB BUTTON: FAILED to create kobject mapping \n");
-        return -ENOMEM;
-    }
-    result = sysfs_create_group(ebb_kobj, &attr_group);
-    if(result) {
-        printk(KERN_ALERT "EBB Button: failed to create sysfs group\n");
-        kobject_put(ebb_kobj);
-        return result;
-    }
+  
 
     return result;
 
@@ -231,17 +192,12 @@ static int __init ebbgpio_init(void){
  *  GPIOs and display cleanup messages.
  */
 static void __exit ebbgpio_exit(void){
-    device_destroy(ebbcharClass, MKDEV(majorNumber, 0));     // remove the device
-    class_unregister(ebbcharClass);                          // unregister the device class
-    class_destroy(ebbcharClass);                             // remove the device class
-    unregister_chrdev(majorNumber, DEVICE_NAME);             // unregister the major number
-
     printk(KERN_INFO "GPIO_TEST: The button state is currently: %d\n", gpio_get_value(gpioButton));
+    kobject_put(ebb_kobj);
     free_irq(irqNumber, NULL);               // Free the IRQ number, no *dev_id required in this case
     gpio_unexport(gpioButton);               // Unexport the Button GPIO
     gpio_free(gpioButton);                   // Free the Button GPIO
     printk(KERN_INFO "GPIO_TEST: Goodbye from the LKM!\n");
-    kobject_put(ebb_kobj);
 
 }
 
