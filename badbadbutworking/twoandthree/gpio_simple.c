@@ -108,7 +108,9 @@ static irq_handler_t ebbgpio_irq_handler(unsigned int irq, void *dev_id, struct 
     printk(KERN_INFO "GPIO_LKM: toc (%ld) \n", toc.tv_nsec);
     timediff = timespec_sub(toc, tic);
     printk(KERN_INFO "GPIO_TEST: timediff (%ld) \n", timediff.tv_nsec);
-    gpio_direction_output(gpioButton, 1);
+    gpio_direction_output(gpioButton,0);
+    printk(KERN_INFO "GPIO_TEST: GPIO_OUT, currently: %d \n", gpio_get_value(gpioButton));
+    gpio_set_value(gpioButton, 1);
     printk(KERN_INFO "GPIO_TEST: GPIO_OUT, set to: %d \n", gpio_get_value(gpioButton));
     return (irq_handler_t) IRQ_HANDLED;      // Announce that the IRQ has been handled correctly
 }
