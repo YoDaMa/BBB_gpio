@@ -6,7 +6,7 @@
 #include <sys/ioctl.h>
 #include "beaglebone-gpio.h"
 
-#define NUM_CALIBRATE 10000
+#define NUM_CALIBRATE 50000
 
 int main(int argc, char *argv[]) {
     long capValue = 0;
@@ -28,14 +28,15 @@ int main(int argc, char *argv[]) {
     calibrationVal = (calibrationVal / NUM_CALIBRATE) * 1.3;
     printf("Finsihed Calibrating. \n");
     printf("Calibration value is: %f  \n", calibrationVal);
-
+    char resp;
 
     while(1) {
             // printf("Measuring capacitance...\n");
         ioctl(fd, IOCTL_MEASURE_CAPACITANCE);
         // printf("done.\n");
         capReturnVal = ioctl(fd, IOCTL_GET_VALUE, &capValue) * 1.0 / CLOCK_SPEED;
-
+        printf("Proceed? (y/n) ");
+        scanf("%c", &resp);
         if (capReturnVal > calibrationVal) {
             printf("(%f > %f) Touch Detected!\n", capReturnVal, calibrationVal);
         } else {
