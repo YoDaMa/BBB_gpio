@@ -57,13 +57,13 @@ static ssize_t diffTime_show(struct kobject *kobj, struct kobj_attribute *attr, 
 }
 
 /* Displays if measure capacitance is on or off */
-static ssize_t elec424_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+static ssize_t isMeasure_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
     printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_SHOW. \n");
     return sprintf(buf, "%d\n", isMeasure);
 }
  
 /** @brief Stores and sets the debounce state */
-static ssize_t elec424_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
+static ssize_t isMeasure_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
    unsigned int temp;
    printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_STORE. \n");
    sscanf(buf, "%du", &temp);                // use a temp varable for correct int->bool
@@ -87,8 +87,8 @@ static ssize_t elec424_store(struct kobject *kobj, struct kobj_attribute *attr, 
  *  The count variable is associated with the numberPresses variable and it is to be exposed
  *  with mode 0666 using the numberPresses_show and numberPresses_store functions above
  */
-static struct kobj_attribute elec424_attr = __ATTR(isMeasure, 0666, elec424_show, elec424_store);
- 
+static struct kobj_attribute elec424_attr = __ATTR(isMeasure, 0666, isMeasure_show, isMeasure_store);
+
 
 /**  The __ATTR_RO macro defines a read-only attribute. There is no need to identify that the
  *  function is called _show, but it must be present. __ATTR_WO can be  used for a write-only
