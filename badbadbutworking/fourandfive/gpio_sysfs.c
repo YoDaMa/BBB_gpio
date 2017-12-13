@@ -57,28 +57,23 @@ static ssize_t diffTime_show(struct kobject *kobj, struct kobj_attribute *attr, 
 }
 
 /* Displays if measure capacitance is on or off */
-static ssize_t isMeasure_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
+static ssize_t touch_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
     printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_SHOW. \n");
-    return sprintf(buf, "%d\n", isMeasure);
+    return sprintf(buf, "%d\n", timediff.tv_nsec);
 }
  
 /** @brief Stores and sets the debounce state */
-static ssize_t isMeasure_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
+static ssize_t touch_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
    unsigned int temp;
    printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_STORE. \n");
    sscanf(buf, "%du", &temp);                // use a temp varable for correct int->bool
    printk(KERN_INFO "GPIO_LKM: Set GPIO_DEBOUNCE to 0 \n");
    isMeasure = temp;
-   if(isMeasure) { 
-        gpio_direction_output(gpioButton, 1); // set pin to output
-        printk(KERN_INFO "GPIO_LKM: gpioButton set to: %d. \n", gpio_get_value(gpioButton)); 
-        getrawmonotonic(&tic);
-        printk(KERN_INFO "EBB Button: Capacitance measured.\n");
-        gpio_direction_input(gpioButton);
-   }
-   else {   // set the debounce time to 0
-      printk(KERN_INFO "EBB Button: Capacitance not measured.\n");
-   }
+   gpio_direction_output(gpioButton, 1); // set pin to output
+   printk(KERN_INFO "GPIO_LKM: gpioButton set to: %d. \n", gpio_get_value(gpioButton)); 
+   getrawmonotonic(&tic);
+   printk(KERN_INFO "EBB Button: Capacitance measured.\n");
+   gpio_direction_input(gpioButton);
    return count;
 }
 
@@ -87,7 +82,7 @@ static ssize_t isMeasure_store(struct kobject *kobj, struct kobj_attribute *attr
  *  The count variable is associated with the numberPresses variable and it is to be exposed
  *  with mode 0666 using the numberPresses_show and numberPresses_store functions above
  */
-static struct kobj_attribute elec424_attr = __ATTR(isMeasure, S_IWUSR | S_IRUGO, isMeasure_show, isMeasure_store);
+static struct kobj_attribute touch_attr = __ATTR(touch, S_IWUSR | S_IRUGO, touch_show, touch_store);
 
 
 /**  The __ATTR_RO macro defines a read-only attribute. There is no need to identify that the
@@ -99,7 +94,7 @@ static struct kobj_attribute diff_attr  = __ATTR_RO(diffTime);  ///< the differe
 
 static struct attribute *ebb_attrs[] = {
       &diff_attr.attr,                   ///< The difference in time between the last two presses
-      &elec424_attr.attr,               ///< Is the debounce state true or false
+      &touch_attr.attr,               ///< Is the debounce state true or false
       NULL,
 };
 
