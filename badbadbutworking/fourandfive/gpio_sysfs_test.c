@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
 
 
     while (1) {
-        file = fopen("/sys/elec424/gpio20/isMeasure", w+);
-        if (file < 0) {
+        file = fopen("/sys/elec424/gpio20/isMeasure", "w+");
+        if (file == NULL) {
             printf("Failed to Open. \n");
 			 printf("Errno: %s\n", strerror(errno));
 			 exit(-1);
@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
             exit(-1);
         }
         fclose(file);
-        file = fopen("/sys/elec424/gpio20/isMeasure", w+);
-        if (file < 0) {
+        file = fopen("/sys/elec424/gpio20/isMeasure", "w+");
+        if (file == NULL) {
             printf("Failed to Open. \n");
 			 printf("Errno: %s\n", strerror(errno));
 			 exit(-1);
