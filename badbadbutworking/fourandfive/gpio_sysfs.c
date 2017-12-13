@@ -58,21 +58,21 @@ static ssize_t diffTime_show(struct kobject *kobj, struct kobj_attribute *attr, 
 
 /* Displays if measure capacitance is on or off */
 static ssize_t touch_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
-    printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_SHOW. \n");
+    // printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_SHOW. \n");
     return sprintf(buf, "%lu\n", timediff.tv_nsec);
 }
  
 /** @brief Stores and sets the debounce state */
 static ssize_t touch_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count){
    unsigned int temp;
-   printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_STORE. \n");
+//    printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_STORE. \n");
    sscanf(buf, "%du", &temp);                // use a temp varable for correct int->bool
-   printk(KERN_INFO "GPIO_LKM: Set GPIO_DEBOUNCE to 0 \n");
+//    printk(KERN_INFO "GPIO_LKM: Set GPIO_DEBOUNCE to 0 \n");
    isMeasure = temp;
    gpio_direction_output(gpioButton, 1); // set pin to output
-   printk(KERN_INFO "GPIO_LKM: gpioButton set to: %d. \n", gpio_get_value(gpioButton)); 
+//    printk(KERN_INFO "GPIO_LKM: gpioButton set to: %d. \n", gpio_get_value(gpioButton)); 
    getrawmonotonic(&tic);
-   printk(KERN_INFO "EBB Button: Capacitance measured.\n");
+//    printk(KERN_INFO "EBB Button: Capacitance measured.\n");
    gpio_direction_input(gpioButton);
    return count;
 }
