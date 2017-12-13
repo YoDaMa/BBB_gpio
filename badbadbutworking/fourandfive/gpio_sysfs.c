@@ -59,7 +59,7 @@ static ssize_t diffTime_show(struct kobject *kobj, struct kobj_attribute *attr, 
 /* Displays if measure capacitance is on or off */
 static ssize_t touch_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf){
     printk(KERN_INFO "GPIO_LKM: Hello from ELEC424_SHOW. \n");
-    return sprintf(buf, "%d\n", timediff.tv_nsec);
+    return sprintf(buf, "%lu\n", timediff.tv_nsec);
 }
  
 /** @brief Stores and sets the debounce state */
