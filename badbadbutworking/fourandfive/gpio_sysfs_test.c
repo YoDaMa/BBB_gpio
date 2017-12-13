@@ -9,14 +9,18 @@
 
 
 int main(int argc, char *argv[]) {
+    float *dischargeHist;
     float dischargeTime = 0;
     float calibrationTime = 0;
     FILE *file;
     int err;
     unsigned int calibrating = 1;
 	char * place = "can be anything";
-
-
+    dischargeHist = (float *)malloc(5 * sizeof(float)); 
+    int j;
+    for (j=0; j < 5; j++) {
+        dischargeHist[j] = 0.0;
+    } 
     while (1) {
         file = fopen("/sys/elec424/gpio20/touch", "w+");
         if (file == NULL) {
@@ -42,19 +46,25 @@ int main(int argc, char *argv[]) {
 				 exit(-1);
 		}
         dischargeTime = atol(message);
-
+        dischargeHist = updateHist(dischargeHist, dischargeTime);
 
             // printf("Measuring capacitance...\n");
         if (calibrating) {
-            int i;
-            for (i=0; i < 100; i++) {
+            for (j=0; j < 100; j++) {
                 printf("Calibrating... Current value: %f \n", dischargeTime);
             }
             printf("Please enter calibration value: ");
             scanf("%f", &calibrationTime);
             calibrating = !calibrating; 
 	} else {
-            if (dischargeTime > calibrationTime) {
+            int foo = 0;
+            // check to make sure the history 
+            for (j=0; j<5; j++) {
+                if (dischargeHist[j] > calibrationTime) {
+                    foo += 1;
+                }
+            }
+            if (foo == 5) {
                 printf("(%f > %f) Touch Detected!\n", dischargeTime, calibrationTime);
             } else {
                 printf("(%f < %f) nothing...\n", dischargeTime, calibrationTime);
@@ -64,4 +74,14 @@ int main(int argc, char *argv[]) {
         fclose(file);
     }
     return 0;
+}
+
+
+float* updateHist(float *histArray, float newVal) {
+    int i;
+    for (i=0; i<4; i++) {
+        histArray[i+1] = histArray[i];
+    }
+    histArray[0] = newVal;
+    return histArray;
 }
