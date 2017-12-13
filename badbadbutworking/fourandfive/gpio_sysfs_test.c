@@ -7,6 +7,7 @@
 #include <sys/ioctl.h>
 #include "beaglebone-gpio.h"
 
+float * updateHist(float *);
 
 int main(int argc, char *argv[]) {
     float *dischargeHist;
