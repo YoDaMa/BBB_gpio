@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
 
     while (1) {
-        file = fopen("/sys/elec424/gpio20/isMeasure", "w+");
+        file = fopen("/sys/elec424/gpio20/touch", "w+");
         if (file == NULL) {
             printf("Failed to Open. \n");
 			 printf("Errno: %s\n", strerror(errno));
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
             exit(-1);
         }
         fclose(file);
-        file = fopen("/sys/elec424/gpio20/isMeasure", "w+");
+        file = fopen("/sys/elec424/gpio20/touch", "w+");
         if (file == NULL) {
             printf("Failed to Open. \n");
 			 printf("Errno: %s\n", strerror(errno));
@@ -51,8 +51,9 @@ int main(int argc, char *argv[]) {
                 printf("Calibrating... Current value: %f \n", dischargeTime);
             }
             printf("Please enter calibration value: ");
-            scanf("%f", calibrationTime);
-        } else {
+            scanf("%f", &calibrationTime);
+            calibrating = !calibrating; 
+	} else {
             if (dischargeTime > calibrationTime) {
                 printf("(%f > %f) Touch Detected!\n", dischargeTime, calibrationTime);
             } else {
