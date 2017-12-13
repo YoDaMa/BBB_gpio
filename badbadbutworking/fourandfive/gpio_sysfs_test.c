@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <fcntl.h> 
 #include <unistd.h>
@@ -10,7 +11,7 @@
 int main(int argc, char *argv[]) {
     float dischargeTime = 0;
     float calibrationTime = 0;
-    FILE file;
+    FILE *file;
     int err;
     unsigned int calibrating = 1;
 	char * place = "can be anything";
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
             if (dischargeTime > calibrationTime) {
                 printf("(%f > %f) Touch Detected!\n", dischargeTime, calibrationTime);
             } else {
-                printf("(%f < %f) nothing...\n", capReturnVal, calibrationTime);
+                printf("(%f < %f) nothing...\n", dischargeTime, calibrationTime);
             }
         }
         free(message);
