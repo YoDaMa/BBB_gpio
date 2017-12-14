@@ -6,7 +6,7 @@
 #include <errno.h>
 #include "beaglebone-gpio.h"
 
-float * updateHist(float *);
+float * updateHist(float *, float);
 
 int main(int argc, char *argv[]) {
     unsigned int count = 0;
