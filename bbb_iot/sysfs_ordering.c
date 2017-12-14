@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h> 
 #include <unistd.h>
@@ -67,10 +67,12 @@ int main(int argc, char *argv[]) {
             }
             if (foo == 5 && count > 500) {
                 printf("(%f > %f) Ordered !\n", dischargeTime, calibrationTime);
-                system("./order_egg.sh");
+                printf("Count is: %d",count);
+		system("./order_egg.sh");
                 // do nothing
-                printf("Debouncing...");
-                sleep(2000);
+                count=0;
+		printf("Debouncing...");
+                sleep(20);
             } else {
                 printf("(%f < %f) nothing...\n", dischargeTime, calibrationTime);
             }
