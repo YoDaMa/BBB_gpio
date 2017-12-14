@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
     float dischargeTime = 0;
     float calibrationTime = 0;
     FILE *file;
+    FILE *pipe;
     int err;
     unsigned int calibrating = 1;
 	char * place = "can be anything";
@@ -65,14 +66,15 @@ int main(int argc, char *argv[]) {
                     foo += 1;
                 }
             }
-            if (foo == 5 && count > 500) {
+            if (foo == 5 && count > 1000) {
                 printf("(%f > %f) Ordered !\n", dischargeTime, calibrationTime);
-                printf("Count is: %d",count);
-		system("./order_egg.sh");
+                printf("Count is: %d\n",count);
+		pipe = popen("./order_egg.sh", "r");
                 // do nothing
                 count=0;
-		printf("Debouncing...");
-                sleep(20);
+		printf("Returning...");
+		sleep(1000);
+		pclose(pipe);
             } else {
                 printf("(%f < %f) nothing...\n", dischargeTime, calibrationTime);
             }
