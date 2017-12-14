@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
 float* updateHist(float *histArray, float newVal) {
     int i;
     for (i=0; i<4; i++) {
-        histArray[i+1] = histArray[i];
+        histArray[i] = histArray[i+1];
     }
-    histArray[0] = newVal;
+    histArray[4] = newVal;
     return histArray;
 }
