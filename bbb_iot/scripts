@@ -21,6 +21,7 @@ aws sns subscribe \
     --protocol email \
     --notification-endpoint ydm1@rice.edu
 
+arn:aws:sns:us-east-1:165657364714:purchaseTopic:d1324d69-165a-48d7-bf5c-d5a4a0f05307
 
 zip publishPurchase.zip publishPurchase.js
 
