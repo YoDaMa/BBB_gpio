@@ -9,6 +9,7 @@
 float * updateHist(float *);
 
 int main(int argc, char *argv[]) {
+    unsigned int count = 0;
     float *dischargeHist;
     float dischargeTime = 0;
     float calibrationTime = 0;
@@ -56,7 +57,7 @@ int main(int argc, char *argv[]) {
             printf("Please enter calibration value: ");
             scanf("%f", &calibrationTime);
             calibrating = !calibrating; 
-	} else {
+	    } else {
             int foo = 0;
             // check to make sure the history 
             for (j=0; j<5; j++) {
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
                     foo += 1;
                 }
             }
-            if (foo == 5) {
+            if (foo == 5 && count > 500) {
                 printf("(%f > %f) Ordered !\n", dischargeTime, calibrationTime);
                 system("./order_egg.sh");
                 // do nothing
@@ -74,6 +75,7 @@ int main(int argc, char *argv[]) {
                 printf("(%f < %f) nothing...\n", dischargeTime, calibrationTime);
             }
         }
+        count++;
         free(message);
         fclose(file);
     }
