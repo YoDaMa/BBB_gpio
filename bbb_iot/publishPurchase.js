@@ -12,8 +12,8 @@ exports.handler = (event, context, callback) => {
 	    var amount = JSON.stringify(record.dynamodb.NewImage.Quantity.N);
             var params = {
                 Subject: 'ELEC424 Amazon Dot', 
-                Message: 'User has placed order for:' + product + '. \n\n' + 
-		'User has ordered ' + amount + 'units for order.\n\n',
+                Message: 'User has placed order for: ' + product + '. \n\n' + 
+		'Quantity of Order: ' + amount + '.\n\n',
                 TopicArn: 'arn:aws:sns:us-east-1:165657364714:purchaseTopic'
             };
             sns.publish(params, function(err, data) {
