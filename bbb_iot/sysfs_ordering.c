@@ -67,14 +67,14 @@ int main(int argc, char *argv[]) {
                 }
             }
             if (foo == 5 && count > 1000) {
-                printf("(%f > %f) Ordered !\n", dischargeTime, calibrationTime);
+                printf("(%f > %f) Ordering...\n", dischargeTime, calibrationTime);
                 printf("Count is: %d\n",count);
-		pipe = popen("./order_egg.sh", "r");
+		count=0;
+		system("./order_egg.sh");
                 // do nothing
-                count=0;
-		printf("Returning...");
-		sleep(1000);
-		pclose(pipe);
+		printf("Ordered!\n");
+		sleep(1);
+		//pclose(pipe);
             } else {
                 printf("(%f < %f) nothing...\n", dischargeTime, calibrationTime);
             }
