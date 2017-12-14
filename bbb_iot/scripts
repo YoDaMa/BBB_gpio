@@ -14,6 +14,8 @@ aws iam put-role-policy --role-name PurchaseLambdaRole \
     --policy-name PurchaseLambdaRolePolicy \
     --policy-document file://role-policy.json
 
+## STEP 3 CREATE SNS TOPIC SUBSCRIPTION
+
 aws sns create-topic --name purchaseTopic
 
 aws sns subscribe \
@@ -23,12 +25,13 @@ aws sns subscribe \
 
 arn:aws:sns:us-east-1:165657364714:purchaseTopic:d1324d69-165a-48d7-bf5c-d5a4a0f05307
 
-zip publishPurchase.zip publishPurchase.js
+## STEP 4 CREATE AND TEST A LAMBDA FUNCTION
 
+zip publishPurchase.zip publishPurchase.js
 
 aws iam get-role --role-name PurchaseLambdaRole
 
-
+arn:aws:iam::165657364714:role/service-role/PurchaseLambdaRole
 "Arn": "arn:aws:iam::165657364714:role/service-role/PurchaseLambdaRole"
 
 
@@ -41,7 +44,15 @@ aws lambda create-function \
     --timeout 5 \
     --runtime nodejs4.3
 
+// TO DELETE
+
+aws lambda delete-function \
+    --region us-east-1 \
+    --function-name publishPurchase
+
 aws lambda invoke  --function-name publishPurchase --payload file://payload.json output.txt
+
+## STEP 5 CREATE A TEST TRIGGER
 
 aws dynamodb describe-table --table-name BuyList
 
@@ -54,6 +65,13 @@ aws lambda create-event-source-mapping \
     --batch-size 1 \
     --starting-position TRIM_HORIZON
 
+UUID: 00149efe-16be-49d0-8439-8a9b40879d06
+
+
+aws lambda delete-event-source-mapping \
+    --uuid 00149efe-16be-49d0-8439-8a9b40879d06
+
+
 arn:aws:lambda:us-east-1:165657364714:function:publishPurchase
 
 # TESTING CODE
@@ -61,6 +79,10 @@ aws dynamodb update-item --table-name BuyList --key '{"Product": {"S": "Tea"}}' 
     --update-expression "ADD Quantity :val" \
     --expression-attribute-values '{":val":{"N": "1"}}' \
     --return-values ALL_NEW
+
+aws dynamodb put-item --table-name BuyList \
+    --item '{"Product": {"S": "Coffee"},"Quantity": {"N": "15"}}' 
+
 
 
 
